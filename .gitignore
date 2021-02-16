@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+ez-apex/x64
+ez-apex/.vs
+driver/x64
+driver-loader/x64
