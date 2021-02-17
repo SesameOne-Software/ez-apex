@@ -13,6 +13,8 @@ int main ( ) {
 		return 1;
 	}
 
+	std::cout << "Driver loaded. Initializing hex." << std::endl;
+
 	drv::window = nullptr;
 
 	while ( !( drv::window = FindWindowA ( "Respawn001", "Apex Legends" ) ) )

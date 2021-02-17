@@ -13,11 +13,11 @@ int main(const int argc, char** argv) {
 		return 1;
 	}
 
-	if (argc != 2 || std::filesystem::path(argv[1]).extension().string().compare(".sys")) {
-		std::cout << "[-] Incorrect usage" << std::endl;
-		std::cin.get ( );
-		return 1;
-	}
+	//if (argc != 2 || std::filesystem::path(argv[1]).extension().string().compare(".sys")) {
+	//	std::cout << "[-] Incorrect usage" << std::endl;
+	//	std::cin.get ( );
+	//	return 1;
+	//}
 
 	//from https://github.com/ShoaShekelbergstein/kdmapper as some Drivers takes same device name
 	if (intel_driver::IsRunning()) {
@@ -26,7 +26,9 @@ int main(const int argc, char** argv) {
 		return 1;
 	}
 
-	const std::string driver_path = argv[1];
+	//const std::string driver_path = argv[1];
+
+	const std::string driver_path = "D:\\Work\\repos\\ez-apex\\ez-apex\\x64\\Release\\driver.sys";
 
 	if (!std::filesystem::exists(driver_path)) {
 		std::cout << "[-] File " << driver_path << " doesn't exist" << std::endl;
