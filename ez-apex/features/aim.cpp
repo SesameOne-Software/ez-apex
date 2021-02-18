@@ -48,30 +48,30 @@ apex::vec3 predict_pos ( const apex::player& local, const apex::weapon& weapon, 
 	pos += target.get_velocity() * t;
 
 	/* predict bullet drop / gravity / bullet time */
-	pos.z += ( 700.0f * weapon.get_bullet_gravity ( ) * 0.5f ) * ( t * t );
+	pos.z += ( 750.0f * weapon.get_bullet_gravity ( ) * 0.5f ) * ( t * t );
 
 	return pos;
 }
 
 void features::aim::run ( ) {
 	while ( true ) {
-		std::this_thread::sleep_for ( 16ms );
+		std::this_thread::sleep_for ( 5ms );
 
 		auto local = apex::local.get ( );
-
+		
 		if ( !local.is_valid ( )
 			|| local.is_downed ( ) )
 			continue;
 
 		const auto weapon = local.get_weapon ( );
 
-		if ( !weapon.is_valid ( ) || !weapon.is_gun() )
+		if ( !weapon.get_ammo() )
 			continue;
 
 		const auto angles = local.get_angles ( );
 		
 		/* aimbot / aim assist */
-		if ( GetAsyncKeyState ( VK_RBUTTON ) ) {
+		if ( GetAsyncKeyState(VK_RBUTTON) & 0x8000 ) {
 			apex::vec3 aimbot_angle = angles;
 
 			const auto camera = local.get_camera_pos ( );
@@ -87,7 +87,7 @@ void features::aim::run ( ) {
 			auto closest_fov = std::numeric_limits<float>::max ( );
 
 			const auto my_team = local.get_team ( );
-
+			
 			for ( auto i = 0; i < apex::max_players; i++ ) {
 				/* only aim at visible players */
 				if ( !position::is_visible ( i ) )
@@ -95,7 +95,7 @@ void features::aim::run ( ) {
 
 				const auto ent = apex::player ( apex::entity_list [ i ].ptr );
 
-				if ( !ent.is_valid ( ) || ent.address ( ) == local.address ( ) || ent.get_team ( ) == my_team )
+				if ( !ent.is_valid ( ) || ent.address ( ) == local.address ( ) /*|| ent.get_team ( ) == my_team*/ )
 					continue;
 
 				const auto target_pos = position::get_bone ( i, 12 /* bones_t::head */ );
@@ -125,11 +125,13 @@ void features::aim::run ( ) {
 			}
 
 			if ( closest_fov != std::numeric_limits<float>::max ( ) ) {
-				const auto delta_ang = (aimbot_angle - local.get_dynamic_angles ( )).normalize_angle ( );
-
+				aimbot_angle -= local.get_dynamic_angles() - local.get_angles();
+				
+				const auto delta_ang = (aimbot_angle - local.get_angles( ) ).normalize_angle ( );
+				
 				if ( delta_ang.valid_angle ( ) ) {
-					const auto delta_ang_smoothed = ( delta_ang - ( delta_ang * ( 1.0f - 0.016f ) /* change smoothing based on distance */ ) ).normalize_angle ( );
-
+					const auto delta_ang_smoothed = delta_ang * 0.05f;
+				
 					if ( delta_ang_smoothed.valid_angle ( ) )
 						local.set_angles ( ( local.get_angles ( ) + delta_ang_smoothed ).normalize_angle ( ) );
 				}

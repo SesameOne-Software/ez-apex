@@ -296,14 +296,19 @@ namespace apex {
 			if ( !valid_angle ( ) )
 				ret = { 0.0f, 0.0f, 0.0f };
 
-			ret.x = std::clamp ( ret.x, -90.0f, 90.0f );
+			while ( ret.x > 180.0f )
+				ret.x -= 360.0f;
 
-			while ( ret.y <= -180.0f )
-				ret.y += 360.0f;
+			while ( ret.x < -180.0f )
+				ret.x += 360.0f;
 
 			while ( ret.y > 180.0f )
 				ret.y -= 360.0f;
 
+			while ( ret.y < -180.0f )
+				ret.y += 360.0f;
+
+			ret.x = std::clamp ( ret.x, -90.0f, 90.0f );
 			ret.y = std::clamp ( ret.y, -180.0f, 180.0f );
 			ret.z = 0.0f;
 
@@ -560,21 +565,21 @@ namespace apex {
 			if ( !m_addr )
 				return weapons_t::invalid;
 
-			return drv::read<weapons_t> ( m_addr + offsets::weapon_ammo_in_clip );
+			return drv::read<weapons_t> ( m_addr + 0x1618 );
 		}
 
 		float get_bullet_speed ( ) const {
 			if ( !m_addr )
 				return 0.0f;
 
-			return drv::read<float> ( m_addr + 0x1e1c );
+			return drv::read<float> ( m_addr + 0x1e50 );
 		}
 
 		float get_bullet_gravity ( ) const {
 			if ( !m_addr )
 				return 0.0f;
 
-			return drv::read<float> ( m_addr + 0x1e24 /* get_bullet_speed + 8 */ );
+			return drv::read<float> ( m_addr + 0x1e58 /* get_bullet_speed + 8 */ );
 		}
 	};
 
@@ -660,6 +665,13 @@ namespace apex {
 			return drv::read<vec3> ( m_addr + offsets::player_angles );
 		}
 
+		vec3 get_aim_punch( ) const {
+			if ( !m_addr )
+				return { 0.0f, 0.0f, 0.0f };
+
+			return drv::read<vec3>( m_addr + 0x2390 );
+		}
+
 		void set_angles ( const vec3& ang ) const {
 			if ( !m_addr )
 				return;
@@ -697,7 +709,7 @@ namespace apex {
 			if ( !m_addr )
 				return std::nullopt;
 
-			const auto bone_ptr = drv::read<uintptr_t> ( m_addr + 0xF18 );
+			const auto bone_ptr = drv::read<uintptr_t> ( m_addr + 0xF38 );
 
 			if ( !bone_ptr )
 				return std::nullopt;
@@ -716,21 +728,21 @@ namespace apex {
 			if ( !m_addr )
 				return { 0.0f, 0.0f, 0.0f };
 
-			return drv::read<vec3> ( m_addr + 0x1E6C );
+			return drv::read<vec3> ( m_addr + 0x1E30 );
 		}
 
 		vec3 get_velocity ( ) const {
 			if ( !m_addr )
 				return { 0.0f, 0.0f, 0.0f };
 
-			return drv::read<vec3> ( m_addr + 0x14C - 12 /* get_origin - 12 */ );
+			return drv::read<vec3> ( m_addr + 0x140 );
 		}
 
 		float get_visible_time ( ) const {
 			if ( !m_addr )
 				return 0.0f;
 
-			return drv::read<float> ( m_addr + 0x1A6C );
+			return drv::read<float> ( m_addr + 0x1A4C );
 		}
 	};
 

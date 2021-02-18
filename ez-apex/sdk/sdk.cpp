@@ -50,37 +50,37 @@ apex::entity_type_t apex::identify_entity ( uintptr_t ent ) {
 }
 
 bool apex::offsets::dump( ) {
-	if ( !( entity_list = drv::pattern::search ( "45 33 C9 48 8D 05 ? ? ? ? 4C 89 0D" ).add ( 6 ).resolve_rip ( ).get<uintptr_t> ( ) ) ) return false;
+	if ( !( entity_list = drv::pattern::search( "45 33 C9 48 8D 05 ? ? ? ? 4C 89 0D" ).add( 6 ).resolve_rip( ).get<uintptr_t>( ) ) ) return false;
 	std::cout << "offsets::entity_list @ 0x" << std::uppercase << std::hex << entity_list << std::dec << std::nouppercase << std::endl;
 
-	if ( !( local_entity = drv::pattern::search ( "48 8B 05 ? ? ? ? 48 0F 44 C7" ).add ( 3 ).resolve_rip ( ).get<uintptr_t> ( ) ) ) return false;
+	if ( !( local_entity = drv::pattern::search( "48 8B 05 ? ? ? ? 48 0F 44 C7" ).add( 3 ).resolve_rip( ).get<uintptr_t>( ) ) ) return false;
 	std::cout << "offsets::local_entity @ 0x" << std::uppercase << std::hex << local_entity << std::dec << std::nouppercase << std::endl;
 
-	if ( !( entity_life_state = 0x778 ) ) return false;
+	if ( !( entity_life_state = 0x0798 ) ) return false;
 	std::cout << "offsets::entity_life_state @ 0x" << std::uppercase << std::hex << entity_life_state << std::dec << std::nouppercase << std::endl;
 
-	if ( !( entity_health = 0x420 ) ) return false;
+	if ( !( entity_health = 0x0440 ) ) return false;
 	std::cout << "offsets::entity_health @ 0x" << std::uppercase << std::hex << entity_health << std::dec << std::nouppercase << std::endl;
 
-	if ( !( entity_team_num = 0x430 ) ) return false;
+	if ( !( entity_team_num = 0x0450 ) ) return false;
 	std::cout << "offsets::entity_team_num @ 0x" << std::uppercase << std::hex << entity_team_num << std::dec << std::nouppercase << std::endl;
 
-	if ( !( player_bleedout_state = 0x2628 ) ) return false;
+	if ( !( player_bleedout_state = 0x25F0 ) ) return false;
 	std::cout << "offsets::player_bleedout_state @ 0x" << std::uppercase << std::hex << player_bleedout_state << std::dec << std::nouppercase << std::endl;
 
-	if ( !( player_angles = drv::pattern::search ( "F2 0F 10 B6" ).add ( 4 ).deref32 ( ).get<uint32_t> ( ) ) ) return false;
+	if ( !( player_angles = drv::pattern::search( "F2 0F 10 B6" ).add( 4 ).deref32( ).get<uint32_t>( ) ) ) return false;
 	std::cout << "offsets::player_angles @ 0x" << std::uppercase << std::hex << player_angles << std::dec << std::nouppercase << std::endl;
 
 	if ( !( player_dynamic_angles = player_angles - 0x10 ) ) return false;
 	std::cout << "offsets::player_dynamic_angles @ 0x" << std::uppercase << std::hex << player_dynamic_angles << std::dec << std::nouppercase << std::endl;
 
-	if ( !( player_last_primary_weapon = 0x1A0C ) ) return false;
+	if ( !( player_last_primary_weapon = 0x19EC ) ) return false;
 	std::cout << "offsets::player_last_primary_weapon @ 0x" << std::uppercase << std::hex << player_last_primary_weapon << std::dec << std::nouppercase << std::endl;
 
 	if ( !( weapon_ammo_in_clip = 0x1634 ) ) return false;
 	std::cout << "offsets::weapon_ammo_in_clip @ 0x" << std::uppercase << std::hex << weapon_ammo_in_clip << std::dec << std::nouppercase << std::endl;
 
-	if ( !( glow_context = drv::pattern::search ( "40 57 48 83 EC 20 8D 42 01" ).add(23).deref32().get<uint32_t>() ) ) return false;
+	if ( !( glow_context = drv::pattern::search( "40 57 48 83 EC 20 8D 42 01" ).add( 23 ).deref32( ).get<uint32_t>( ) ) ) return false;
 	std::cout << "offsets::glow_context @ 0x" << std::uppercase << std::hex << glow_context << std::dec << std::nouppercase << std::endl;
 
 	if ( !( glow_life_time = glow_context - 36 ) ) return false;
@@ -89,10 +89,10 @@ bool apex::offsets::dump( ) {
 	if ( !( glow_distance = glow_context - 20 ) ) return false;
 	std::cout << "offsets::glow_distance @ 0x" << std::uppercase << std::hex << glow_distance << std::dec << std::nouppercase << std::endl;
 
-	if ( !( glow_type = drv::pattern::search ( "8B 84 81 ? ? ? ? C1 E8 18" ).add ( 3 ).deref32 ( ).get<ptrdiff_t> ( ) + 4 ) ) return false;
+	if ( !( glow_type = drv::pattern::search( "8B 84 81 ? ? ? ? C1 E8 18" ).add( 3 ).deref32( ).get<ptrdiff_t>( ) + 4 ) ) return false;
 	std::cout << "offsets::glow_type @ 0x" << std::uppercase << std::hex << glow_type << std::dec << std::nouppercase << std::endl;
 
-	if ( !( glow_color = drv::pattern::search ( "E8 ? ? ? ? 8B 8F ? ? ? ? F6 C1 02" ).add ( 1 ).resolve_rip().add(2).deref32 ( ).get<ptrdiff_t> ( ) + 12 * 2 ) ) return false;
+	if ( !( glow_color = drv::pattern::search( "E8 ? ? ? ? 8B 8F ? ? ? ? F6 C1 02" ).add( 1 ).resolve_rip( ).add( 2 ).deref32( ).get<ptrdiff_t>( ) + 12 * 2 ) ) return false;
 	std::cout << "offsets::glow_color @ 0x" << std::uppercase << std::hex << glow_color << std::dec << std::nouppercase << std::endl;
 
 	if ( !( glow_visible_type = glow_context + 16 ) ) return false;
