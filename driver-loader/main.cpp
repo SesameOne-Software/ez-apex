@@ -28,10 +28,8 @@ int main(const int argc, char** argv) {
 
 	//const std::string driver_path = argv[1];
 
-	const std::string driver_path = "D:\\Work\\repos\\ez-apex\\ez-apex\\x64\\Release\\driver.sys";
-
-	if (!std::filesystem::exists(driver_path)) {
-		std::cout << "[-] File " << driver_path << " doesn't exist" << std::endl;
+	if (!std::filesystem::exists("driver.sys")) {
+		std::cout << "[-] File doesn't exist" << std::endl;
 		std::cin.get ( );
 		return 1;
 	}
@@ -66,8 +64,8 @@ int main(const int argc, char** argv) {
 		return 1;
 	}
 
-	if (!kdmapper::MapDriver(iqvw64e_device_handle, driver_path)) {
-		std::cout << "[-] Failed to map " << driver_path << std::endl;
+	if (!kdmapper::MapDriver(iqvw64e_device_handle, "driver.sys")) {
+		std::cout << "[-] Failed to map driver" << std::endl;
 		intel_driver::Unload(iqvw64e_device_handle);
 		std::cin.get ( );
 		return 1;
