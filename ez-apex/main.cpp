@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#pragma comment(lib, "winmm.lib")
+
 int main ( ) {
 	if ( !drv::is_loaded ( ) ) {
 		std::cout << "Driver is not loaded." << std::endl;

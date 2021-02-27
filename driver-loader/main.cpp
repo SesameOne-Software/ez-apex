@@ -7,11 +7,11 @@ int main(const int argc, char** argv) {
 
 	srand( time ( nullptr ));
 
-	if ( drv::is_loaded ( ) ) {
-		std::cout << "[-] Driver is already loaded." << std::endl;
-		std::cin.get ( );
-		return 1;
-	}
+	//if ( drv::is_loaded ( ) ) {
+	//	std::cout << "[-] Driver is already loaded." << std::endl;
+	//	std::cin.get ( );
+	//	return 1;
+	//}
 
 	//if (argc != 2 || std::filesystem::path(argv[1]).extension().string().compare(".sys")) {
 	//	std::cout << "[-] Incorrect usage" << std::endl;

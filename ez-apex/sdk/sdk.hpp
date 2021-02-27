@@ -28,8 +28,16 @@ namespace apex {
 		inline ptrdiff_t player_angles = 0;
 		inline ptrdiff_t player_dynamic_angles = 0;
 		inline ptrdiff_t player_last_primary_weapon = 0;
+		inline ptrdiff_t player_bones = 0;
+		inline ptrdiff_t player_camera = 0;
+		inline ptrdiff_t player_velocity = 0;
+		inline ptrdiff_t player_last_visible_time = 0;
+		inline ptrdiff_t player_last_crosshair_target_time = 0;
 
+		inline ptrdiff_t weapon_definition_index = 0;
 		inline ptrdiff_t weapon_ammo_in_clip = 0;
+		inline ptrdiff_t weapon_bullet_speed = 0;
+		inline ptrdiff_t weapon_bullet_gravity = 0;
 
 		inline ptrdiff_t glow_context = 0;
 		inline ptrdiff_t glow_life_time = 0;
@@ -470,9 +478,6 @@ namespace apex {
 		uint64_t next;
 	};
 
-	inline std::array<entity_info_t, max_entities> entity_list;
-	inline std::array<entity_type_t, max_entities> entity_types;
-
 	enum class weapons_t : uint32_t {
 		invalid = -1,
 		r301 = 0,
@@ -503,18 +508,15 @@ namespace apex {
 	};
 
 	class weapon {
-		entity_type_t m_ent_type;
 		uintptr_t m_addr;
 
 	public:
 		weapon ( ) {
 			m_addr = 0;
-			m_ent_type = entity_type_t::none;
 		}
 
 		weapon ( uintptr_t addr ) {
 			m_addr = addr;
-			m_ent_type = entity_type_t::weapon;
 		}
 
 		auto address ( ) {
@@ -525,7 +527,7 @@ namespace apex {
 			if ( !m_addr )
 				return false;
 
-			return m_ent_type == entity_type_t::weapon;
+			return identify_entity( m_addr ) == entity_type_t::weapon;
 		}
 
 		bool is_gun ( ) const {
@@ -565,37 +567,38 @@ namespace apex {
 			if ( !m_addr )
 				return weapons_t::invalid;
 
-			return drv::read<weapons_t> ( m_addr + 0x1618 );
+			return drv::read<weapons_t> ( m_addr + offsets::weapon_definition_index );
 		}
 
 		float get_bullet_speed ( ) const {
 			if ( !m_addr )
 				return 0.0f;
 
-			return drv::read<float> ( m_addr + 0x1e50 );
+			return drv::read<float> ( m_addr + offsets::weapon_bullet_speed );
 		}
 
 		float get_bullet_gravity ( ) const {
 			if ( !m_addr )
 				return 0.0f;
 
-			return drv::read<float> ( m_addr + 0x1e58 /* get_bullet_speed + 8 */ );
+			return drv::read<float> ( m_addr + offsets::weapon_bullet_gravity );
 		}
 	};
 
 	class player {
-		entity_type_t m_ent_type;
 		uintptr_t m_addr;
 
 	public:
 		player ( ) {
 			m_addr = 0;
-			m_ent_type = entity_type_t::none;
 		}
 
 		player ( uintptr_t addr ) {
 			m_addr = addr;
-			m_ent_type = entity_type_t::player;
+		}
+
+		static player get( int idx ) {
+			return player( drv::read<entity_info_t>( offsets::entity_list + sizeof( entity_info_t ) * idx ).ptr );
 		}
 
 		auto address ( ) const {
@@ -641,7 +644,7 @@ namespace apex {
 			if ( !m_addr )
 				return false;
 
-			return m_ent_type == entity_type_t::player;
+			return identify_entity(m_addr) == entity_type_t::player;
 		}
 
 		bool is_valid ( ) const {
@@ -663,13 +666,6 @@ namespace apex {
 				return { 0.0f, 0.0f, 0.0f };
 
 			return drv::read<vec3> ( m_addr + offsets::player_angles );
-		}
-
-		vec3 get_aim_punch( ) const {
-			if ( !m_addr )
-				return { 0.0f, 0.0f, 0.0f };
-
-			return drv::read<vec3>( m_addr + 0x2390 );
 		}
 
 		void set_angles ( const vec3& ang ) const {
@@ -702,14 +698,14 @@ namespace apex {
 			if ( !handle || handle == 0xFFFFFFFF )
 				return weapon ( );
 
-			return weapon ( entity_list[ static_cast< int >( handle & static_cast< uint32_t >( max_entities - 1 ) ) ].ptr );
+			return weapon ( drv::read<entity_info_t>( offsets::entity_list + sizeof( entity_info_t ) * static_cast< int >( handle & static_cast< uint32_t >( max_entities - 1 ) ) ).ptr );
 		}
 
 		std::optional<std::array<matrix3x4, 128>> get_bone_matrix ( ) const {
 			if ( !m_addr )
 				return std::nullopt;
 
-			const auto bone_ptr = drv::read<uintptr_t> ( m_addr + 0xF38 );
+			const auto bone_ptr = drv::read<uintptr_t> ( m_addr + offsets::player_bones );
 
 			if ( !bone_ptr )
 				return std::nullopt;
@@ -728,21 +724,28 @@ namespace apex {
 			if ( !m_addr )
 				return { 0.0f, 0.0f, 0.0f };
 
-			return drv::read<vec3> ( m_addr + 0x1E30 );
+			return drv::read<vec3> ( m_addr + offsets::player_camera );
 		}
 
 		vec3 get_velocity ( ) const {
 			if ( !m_addr )
 				return { 0.0f, 0.0f, 0.0f };
 
-			return drv::read<vec3> ( m_addr + 0x140 );
+			return drv::read<vec3> ( m_addr + offsets::player_velocity );
 		}
 
 		float get_visible_time ( ) const {
 			if ( !m_addr )
 				return 0.0f;
 
-			return drv::read<float> ( m_addr + 0x1A4C );
+			return drv::read<float> ( m_addr + offsets::player_last_visible_time );
+		}
+
+		float get_crosshair_time( ) const {
+			if ( !m_addr )
+				return 0.0f;
+
+			return drv::read<float>( m_addr + offsets::player_last_crosshair_target_time );
 		}
 	};
 
@@ -755,6 +758,11 @@ namespace apex {
 
 	inline local_player local;
 
-	void update ( );
 	bool init ( );
+
+	inline void sleep( double t ) {
+		timeBeginPeriod( 1 );
+		Sleep( static_cast< int >( t * 1000.0 ) );
+		timeEndPeriod( 1 );
+	}
 }

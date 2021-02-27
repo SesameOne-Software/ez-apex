@@ -4,6 +4,9 @@
 #include <iostream>
 
 apex::entity_type_t apex::identify_entity ( uintptr_t ent ) {
+	if ( !ent )
+		return entity_type_t::none;
+
 	const auto networkable = drv::read<uintptr_t> ( ent + 24 );
 
 	if ( !networkable )
@@ -56,16 +59,16 @@ bool apex::offsets::dump( ) {
 	if ( !( local_entity = drv::pattern::search( "48 8B 05 ? ? ? ? 48 0F 44 C7" ).add( 3 ).resolve_rip( ).get<uintptr_t>( ) ) ) return false;
 	std::cout << "offsets::local_entity @ 0x" << std::uppercase << std::hex << local_entity << std::dec << std::nouppercase << std::endl;
 
-	if ( !( entity_life_state = 0x0798 ) ) return false;
+	if ( !( entity_life_state = drv::pattern::search( "0F BE 81 ? ? ? ? C3" ).add( 3 ).deref32( ).get<uintptr_t>( ) ) ) return false;
 	std::cout << "offsets::entity_life_state @ 0x" << std::uppercase << std::hex << entity_life_state << std::dec << std::nouppercase << std::endl;
 
-	if ( !( entity_health = 0x0440 ) ) return false;
+	if ( !( entity_health = drv::pattern::search( "48 83 C4 30 5F C3 CC CC CC CC 8B 81" ).add( 12 ).deref32( ).get<uintptr_t>( ) ) ) return false;
 	std::cout << "offsets::entity_health @ 0x" << std::uppercase << std::hex << entity_health << std::dec << std::nouppercase << std::endl;
 
-	if ( !( entity_team_num = 0x0450 ) ) return false;
+	if ( !( entity_team_num = entity_health + 0x10 ) ) return false;
 	std::cout << "offsets::entity_team_num @ 0x" << std::uppercase << std::hex << entity_team_num << std::dec << std::nouppercase << std::endl;
 
-	if ( !( player_bleedout_state = 0x25F0 ) ) return false;
+	if ( !( player_bleedout_state = drv::pattern::search( "8B 81 ? ? ? ? C3 CC CC CC CC CC CC CC CC CC 40 53 48 83 EC 20 48 8B D9 48 8B CA" ).add( 2 ).deref32().get<uintptr_t>( ) ) ) return false;
 	std::cout << "offsets::player_bleedout_state @ 0x" << std::uppercase << std::hex << player_bleedout_state << std::dec << std::nouppercase << std::endl;
 
 	if ( !( player_angles = drv::pattern::search( "F2 0F 10 B6" ).add( 4 ).deref32( ).get<uint32_t>( ) ) ) return false;
@@ -74,11 +77,35 @@ bool apex::offsets::dump( ) {
 	if ( !( player_dynamic_angles = player_angles - 0x10 ) ) return false;
 	std::cout << "offsets::player_dynamic_angles @ 0x" << std::uppercase << std::hex << player_dynamic_angles << std::dec << std::nouppercase << std::endl;
 
-	if ( !( player_last_primary_weapon = 0x19EC ) ) return false;
+	if ( !( player_bones = drv::pattern::search( "48 8B 97 ? ? ? ? 48 8D 0C 40 0F 28 35" ).add( 3 ).deref32( ).get<uint32_t>( ) ) ) return false;
+	std::cout << "offsets::player_bones @ 0x" << std::uppercase << std::hex << player_bones << std::dec << std::nouppercase << std::endl;
+
+	if ( !( player_last_primary_weapon = drv::pattern::search( "48 C7 44 24 24 ? ? ? ? 48 ? ? ? ? 33 D2 89 74 24 20" ).add( 5 ).deref32( ).get<uint32_t>( ) ) ) return false;
 	std::cout << "offsets::player_last_primary_weapon @ 0x" << std::uppercase << std::hex << player_last_primary_weapon << std::dec << std::nouppercase << std::endl;
 
-	if ( !( weapon_ammo_in_clip = 0x1634 ) ) return false;
+	if ( !( player_camera = drv::pattern::search( "F3 0F 10 83 ? ? ? ? F3 0F 10 8B ? ? ? ? F3 0F 11 45 EF" ).add( 4 ).deref32( ).get<uint32_t>( ) ) ) return false;
+	std::cout << "offsets::player_camera @ 0x" << std::uppercase << std::hex << player_camera << std::dec << std::nouppercase << std::endl;
+
+	if ( !( player_velocity = drv::pattern::search( "F2 0F 10 97 ? ? ? ? F3" ).add( 4 ).deref32( ).get<uint32_t>( ) ) ) return false;
+	std::cout << "offsets::player_velocity @ 0x" << std::uppercase << std::hex << player_velocity << std::dec << std::nouppercase << std::endl;
+
+	if ( !( player_last_visible_time = drv::pattern::search( "8B 8F ? ? ? ? 89 08 48 8D 15" ).add( 2 ).deref32( ).get<uint32_t>( ) ) ) return false;
+	std::cout << "offsets::player_last_visible_time @ 0x" << std::uppercase << std::hex << player_last_visible_time << std::dec << std::nouppercase << std::endl;
+
+	if ( !( player_last_crosshair_target_time = player_last_visible_time + 0x8 ) ) return false;
+	std::cout << "offsets::player_last_crosshair_target_time @ 0x" << std::uppercase << std::hex << player_last_crosshair_target_time << std::dec << std::nouppercase << std::endl;
+
+	if ( !( weapon_ammo_in_clip = drv::pattern::search( "8B 83 ? ? ? ? 48 ? ? ? ? 48 ? ? ? ? 48 83 C4 20 5F C3 8B  93" ).add( 2 ).deref32( ).get<uint32_t>( ) + 0x10 ) ) return false;
 	std::cout << "offsets::weapon_ammo_in_clip @ 0x" << std::uppercase << std::hex << weapon_ammo_in_clip << std::dec << std::nouppercase << std::endl;
+	
+	if ( !( weapon_bullet_speed = drv::pattern::search( "F3 0F 59 B3 ? ? ? ? 0F 29 BC 24" ).add( 4 ).deref32( ).get<uint32_t>( ) ) ) return false;
+	std::cout << "offsets::weapon_bullet_speed @ 0x" << std::uppercase << std::hex << weapon_bullet_speed << std::dec << std::nouppercase << std::endl;
+
+	if ( !( weapon_bullet_gravity = drv::pattern::search( "F3 0F 10 93 ? ? ? ? F3 0F 5E C1 F3 0F 59 50 68" ).add( 4 ).deref32( ).get<uint32_t>( ) ) ) return false;
+	std::cout << "offsets::weapon_bullet_gravity @ 0x" << std::uppercase << std::hex << weapon_bullet_gravity << std::dec << std::nouppercase << std::endl;
+
+	if ( !( weapon_definition_index = drv::pattern::search( "48 89 9B ? ? ? ? 4C 89 A3 ? ? ? ? 4C 89 A3" ).add( 3 ).deref32( ).get<uint32_t>( ) ) ) return false;
+	std::cout << "offsets::weapon_definition_index @ 0x" << std::uppercase << std::hex << weapon_definition_index << std::dec << std::nouppercase << std::endl;
 
 	if ( !( glow_context = drv::pattern::search( "40 57 48 83 EC 20 8D 42 01" ).add( 23 ).deref32( ).get<uint32_t>( ) ) ) return false;
 	std::cout << "offsets::glow_context @ 0x" << std::uppercase << std::hex << glow_context << std::dec << std::nouppercase << std::endl;
@@ -104,26 +131,12 @@ bool apex::offsets::dump( ) {
 	return true;
 }
 
-void apex::update ( ) {
-	while ( true ) {
-		std::this_thread::sleep_for ( 25ms );
-
-		drv::read ( reinterpret_cast< void* >( offsets::entity_list ), entity_list.data ( ), sizeof ( entity_list ) );
-
-		//for ( auto i = 0; i < apex::max_players; i++ )
-		//	if ( entity_list [ i ].ptr )
-		//		entity_types [ i ] = identify_entity ( entity_list [ i ].ptr );
-	}
-}
-
 bool apex::init ( ) {
 	if ( !( base = drv::get_base ( ) ) )
 		return false;
 
 	if(!offsets::dump ( ) )
 		return false;
-
-	std::thread ( update ).detach ( );
 
 	return true;
 }
