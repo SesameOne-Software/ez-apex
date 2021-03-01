@@ -1,10 +1,12 @@
 #pragma once
 #include "driver_interface.hpp"
 
+#include "security/security.hpp"
+
 bool drv::dispatch_request ( request_t& args ) {
 	static auto NtGdiDdDDIGetProcessDeviceRemovalSupport
 		= reinterpret_cast< uint64_t ( __stdcall* )( hook_args_t*, uint64_t* ) >(
-			GetProcAddress ( LoadLibraryA ( "win32u.dll" ), "NtGdiDdDDIGetProcessDeviceRemovalSupport" )
+			GetProcAddress ( LoadLibraryA ( _("win32u.dll" )), _("NtGdiDdDDIGetProcessDeviceRemovalSupport") )
 			);
 
 	hook_args_t data;

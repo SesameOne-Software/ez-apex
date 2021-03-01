@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <optional>
 
+#include "../security/security.hpp"
+
 constexpr uint32_t hash ( char const* input ) {
 	return *input ?
 		static_cast< uint32_t >( *input ) + 33 * hash ( input + 1 ) :
@@ -46,6 +48,11 @@ namespace apex {
 		inline ptrdiff_t glow_color = 0;
 		inline ptrdiff_t glow_visible_type = 0;
 		inline ptrdiff_t glow_fade = 0;
+
+		inline ptrdiff_t global_vars = 0;
+		inline ptrdiff_t input_system = 0;
+		inline ptrdiff_t game_window = 0;
+		inline HWND backup_game_window = nullptr;
 
 		bool dump ( );
 	};
@@ -507,6 +514,75 @@ namespace apex {
 		volt
 	};
 
+	//Highlight_SetVisibilityType
+	enum highlight_visibility_types_t {
+		HIGHLIGHT_VIS_NONE = 0 ,
+		HIGHLIGHT_VIS_FORCE_ON ,
+		HIGHLIGHT_VIS_ALWAYS ,
+		HIGHLIGHT_VIS_LOS ,
+		HIGHLIGHT_VIS_LOS_ENTSONLYCONTENTSBLOCK ,
+		HIGHLIGHT_VIS_OCCLUDED ,
+		HIGHLIGHT_VIS_FULL_VIEW
+	};
+
+	enum highlight_contexts_t {
+		HIGHLIGHT_CONTEXT_NONE = -1 ,
+		HIGHLIGHT_CONTEXT_NEUTRAL ,
+		HIGHLIGHT_CONTEXT_FRIENDLY ,
+		HIGHLIGHT_CONTEXT_ENEMY ,
+		HIGHLIGHT_CONTEXT_OWNED ,
+		HIGHLIGHT_CONTEXT_PINGED ,
+		HIGHLIGHT_CONTEXT_CAUSTIC_THREAT ,
+		HIGHLIGHT_CONTEXT_DEATH_RECAP ,
+		HIGHLIGHT_CONTEXT_SONAR ,
+		HIGHLIGHT_MAX_CONTEXTS
+	};
+
+	enum highlight_outline_funcs_t {
+		HIGHLIGHT_OUTLINE_CUSTOM_COLOR = 101 ,
+		HIGHLIGHT_OUTLINE_CUSTOM_COLOR_WEAPON_PICKUP = 110 ,
+		HIGHLIGHT_OUTLINE_CUSTOM_COLOR_PULSE = 120 ,
+		HIGHLIGHT_OUTLINE_CUSTOM_COLOR_OBEY_Z = 121 ,
+		HIGHLIGHT_OUTLINE_CUSTOM_COLOR_OCCLUDED_NOSCANLINES = 129 ,
+		HIGHLIGHT_OUTLINE_CUSTOM_COLOR_NOZ_NOSCANLINES = 169 ,
+		HIGHLIGHT_OUTLINE_SONAR = 103 ,
+		HIGHLIGHT_OUTLINE_INTERACT_BUTTON = 105 ,
+		HIGHLIGHT_OUTLINE_OBJECTIVE = 125 ,
+		HIGHLIGHT_OUTLINE_VM_CUSTOM_COLOR = 114 ,
+		HIGHLIGHT_OUTLINE_LOOT_DEFAULT = 135 ,
+		HIGHLIGHT_OUTLINE_LOOT_FOCUSED = 136 ,
+		HIGHLIGHT_OUTLINE_MENU_MODEL_REVEAL = 75
+	};
+
+	enum highlight_fill_funcs_t {
+		HIGHLIGHT_FILL_INTERACT_BUTTON = 103 ,
+		HIGHLIGHT_FILL_VM_CUSTOM_COLOR = 114 ,
+		HIGHLIGHT_FILL_NONE = 0 ,
+		HIGHLIGHT_FILL_LOBBY_IN_MATCH = 109 ,
+		HIGHLIGHT_FILL_SONAR = 103 ,
+		HIGHLIGHT_FILL_LOOT_DEFAULT = 135 ,
+		HIGHLIGHT_FILL_LOOT_FOCUSED = 136 ,
+		HIGHLIGHT_FILL_OBJECTIVE = 126 ,
+		HIGHLIGHT_FILL_MENU_MODEL_REVEAL = 75 ,
+		HIGHLIGHT_FILL_BLOODHOUND = 12 ,
+		HIGHLIGHT_FILL_CAUSTIC_THREAT = 133 ,
+		HIGHLIGHT_FILL_CAUSTIC_CANISTER = 134
+	};
+	/*
+	Highlight_SetFunctions/Script_Highlight_SetFunctions
+	- args ( contextID, insideSlot, entityVisible, outlineSlot, outlineRadius, state, afterPostProcess)
+	xref: "Highlight: inside function slot should be >= 0 and < 256. Actual value is %d.\n"
+	*/
+
+	class globals_vars {
+	public:
+		auto curtime( ) const {
+			return drv::read<float>( offsets::global_vars + 4 );
+		}
+	};
+
+	inline globals_vars globals;
+
 	class weapon {
 		uintptr_t m_addr;
 
@@ -747,6 +823,24 @@ namespace apex {
 
 			return drv::read<float>( m_addr + offsets::player_last_crosshair_target_time );
 		}
+
+		void set_highlight_funcs( int context_id , uint32_t inside_slot , bool ent_visible , uint32_t outline_slot , float outline_radius , uint32_t state , bool after_post_process ) const {
+			uint32_t glow_funcs = 0;
+
+			glow_funcs |= ( inside_slot & 0xFF ) << 0;
+			glow_funcs |= ( outline_slot & 0xFF ) << 8;
+			glow_funcs |= ( static_cast< uint32_t >( ( ( outline_radius * 255.0f ) * 0.125f ) + 0.5f ) & 0xFF ) << 16;
+			glow_funcs |= (( ( static_cast< uint32_t >( ent_visible ) << 6 ) | ( state & 0x3F ) | ( static_cast< uint32_t >( after_post_process ) << 7 ) ) & 0xFF) << 24;
+
+			drv::write( m_addr +  context_id * sizeof( context_id ) + 0x2C0 , glow_funcs );
+			drv::write( m_addr + 0x3A4 , globals.curtime() );
+
+			if ( context_id == drv::read<int> ( m_addr + 0x3C8 ) ) {
+				drv::write<uint64_t>( m_addr + 0x388 , 0 );
+				drv::write<uint64_t>( m_addr + 0x390 , 0 );
+				drv::write<uint64_t>( m_addr + 0x398 , 0 );
+			}
+		}
 	};
 
 	class local_player {
@@ -755,6 +849,10 @@ namespace apex {
 			return player ( drv::read<uintptr_t> ( offsets::local_entity ) );
 		}
 	};
+
+	inline void enable_input( bool enable ) {
+		return drv::write( offsets::game_window, enable ? offsets::backup_game_window : nullptr );
+	}
 
 	inline local_player local;
 
