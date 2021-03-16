@@ -71,7 +71,7 @@ int features::aim::get_target( ) {
 }
 
 void features::aim::run ( ) {
-	constexpr auto aimbot_fov = 5.0f;
+	constexpr auto aimbot_fov = 8.0f;
 
 	while ( true ) {
 		apex::sleep( 0.005 );
@@ -146,7 +146,7 @@ void features::aim::run ( ) {
 
 			const auto fov = calculate_fov( camera , absolute_pos , angles );
 			const auto dist = camera.dist_to( absolute_pos ) / 650.0f;
-			const auto scaled_fov = std::clamp( aimbot_fov / dist , 0.2f , aimbot_fov );
+			const auto scaled_fov = std::clamp( aimbot_fov / dist , 0.8f , aimbot_fov );
 
 			if ( fov > scaled_fov /* aimbot fov scaled by distance */ || fov >= closest_fov )
 				continue;
@@ -162,14 +162,17 @@ void features::aim::run ( ) {
 			//aimbot_angle -= local.get_aim_punch( );
 			closest_angle = closest_angle.normalize_angle( );
 
-			const auto delta_ang = ( closest_angle - local.get_angles( ) ).normalize_angle( );
-			
-			if ( delta_ang.valid_angle( ) ) {
-				const auto delta_ang_smoothed = delta_ang * 0.24f;
-			
-				if ( delta_ang_smoothed.valid_angle( ) )
-					local.set_angles( ( local.get_angles( ) + delta_ang_smoothed ).normalize_angle( ) );
+			if ( closest_angle.valid_angle( ) ) {
+				local.set_angles( closest_angle );
 			}
+			//const auto delta_ang = ( closest_angle - local.get_angles( ) ).normalize_angle( );
+			//
+			//if ( delta_ang.valid_angle( ) ) {
+			//	const auto delta_ang_smoothed = delta_ang * 0.24f;
+			//
+			//	if ( delta_ang_smoothed.valid_angle( ) )
+			//		local.set_angles( ( local.get_angles( ) + delta_ang_smoothed ).normalize_angle( ) );
+			//}
 
 			cur_target = closest_target_idx;
 		}

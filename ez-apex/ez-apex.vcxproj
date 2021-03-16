@@ -46,7 +46,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -144,6 +144,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="driver-loader\driver_interface.cpp" />
+    <ClCompile Include="driver-loader\intel_driver.cpp" />
+    <ClCompile Include="driver-loader\kdmapper.cpp" />
+    <ClCompile Include="driver-loader\portable_executable.cpp" />
+    <ClCompile Include="driver-loader\service.cpp" />
+    <ClCompile Include="driver-loader\utils.cpp" />
     <ClCompile Include="driver_interface.cpp" />
     <ClCompile Include="features\aim.cpp" />
     <ClCompile Include="features\glow.cpp" />
@@ -170,6 +176,15 @@
     <ClCompile Include="tinyxml2\tinyxml2.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="driver-loader\driver_interface.hpp" />
+    <ClInclude Include="driver-loader\intel_driver.hpp" />
+    <ClInclude Include="driver-loader\intel_driver_resource.hpp" />
+    <ClInclude Include="driver-loader\kdmapper.hpp" />
+    <ClInclude Include="driver-loader\nt.hpp" />
+    <ClInclude Include="driver-loader\portable_executable.hpp" />
+    <ClInclude Include="driver-loader\service.hpp" />
+    <ClInclude Include="driver-loader\utils.hpp" />
+    <ClInclude Include="driver_bytes.h" />
     <ClInclude Include="driver_interface.hpp" />
     <ClInclude Include="features\aim.hpp" />
     <ClInclude Include="features\glow.hpp" />

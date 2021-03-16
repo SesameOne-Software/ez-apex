@@ -2,11 +2,11 @@
 
 #include <chrono>
 
-std::array<std::chrono::high_resolution_clock::time_point, apex::max_players> visible_change_timer { };
+std::array<float, apex::max_players> visible_change_timer { };
 std::array<float, apex::max_players> last_visible_times { 0.0f };
 std::array<bool, apex::max_players> players_visible { false };
 
-std::array<std::chrono::high_resolution_clock::time_point , apex::max_players> crosshair_change_timer { };
+std::array<float , apex::max_players> crosshair_change_timer { };
 std::array<float , apex::max_players> last_crosshair_times { 0.0f };
 std::array<bool , apex::max_players> in_crosshair { false };
 
@@ -14,7 +14,7 @@ std::array<std::optional<std::array<apex::matrix3x4, 128>>, apex::max_players> p
 
 apex::vec3 camera_vel;
 apex::vec3 last_position;
-std::chrono::high_resolution_clock::time_point last_position_time;
+float last_position_time = 0.0f;
 
 std::optional <apex::vec3> features::position::get_bone ( int ent_idx, int i ) {
 	if ( !player_bones [ ent_idx ] )
@@ -33,7 +33,7 @@ bool features::position::is_visible ( int ent_idx ) {
 
 void features::position::run ( ) {
 	while ( true ) {
-		apex::sleep( 0.001 );
+		apex::sleep( 0.005 );
 
 		auto local = apex::local.get ( );
 
@@ -48,9 +48,9 @@ void features::position::run ( ) {
 
 		/* solve for local camera velocity */ {
 			const auto pos = local.get_camera_pos( );
-			const auto camera_time = std::chrono::high_resolution_clock::now( );
+			const auto camera_time = apex::globals.curtime();
 
-			camera_vel = ( pos - last_position ) / abs( static_cast< float >( std::chrono::duration_cast< std::chrono::milliseconds >( camera_time - last_position_time ).count( ) ) / 1000.0f );
+			camera_vel = ( pos - last_position ) / abs( camera_time - last_position_time );
 
 			last_position = pos;
 			last_position_time = camera_time;
@@ -69,21 +69,22 @@ void features::position::run ( ) {
 			}
 
 			const auto visible_time = ent.get_visible_time ( );
-			
+			const auto now = apex::globals.curtime( );
+
 			if ( visible_time != last_visible_times [ i ] ) {
-				visible_change_timer [ i ] = std::chrono::high_resolution_clock::now ( );
+				visible_change_timer [ i ] = now;
 				last_visible_times [ i ] = visible_time;
 			}
 
 			const auto crosshair_time = ent.get_crosshair_time( );
 
 			if ( crosshair_time != last_crosshair_times[ i ] ) {
-				crosshair_change_timer[ i ] = std::chrono::high_resolution_clock::now( );
+				crosshair_change_timer[ i ] = now;
 				last_crosshair_times[ i ] = crosshair_time;
 			}
 
-			players_visible[ i ] = abs( std::chrono::duration_cast< std::chrono::milliseconds >( std::chrono::high_resolution_clock::now( ) - visible_change_timer[ i ] ).count( ) ) < 10;
-			in_crosshair[ i ] = abs( std::chrono::duration_cast< std::chrono::milliseconds >( std::chrono::high_resolution_clock::now( ) - crosshair_change_timer[ i ] ).count( ) ) < 10;
+			players_visible[ i ] = abs( now - visible_change_timer[ i ] ) < 0.01f;
+			in_crosshair[ i ] = abs( now - crosshair_change_timer[ i ] ) < 0.01f;
 			player_bones [ i ] = ent.get_bone_matrix ( );
 		}
 	}
