@@ -3,13 +3,14 @@
 #include "../sdk/sdk.hpp"
 
 #include "position.hpp"
+#include "../options.hpp"
 
 #undef max
 #undef min
 
 int cur_target = 0;
 
-void move_mouse ( const apex::player& local, apex::vec3 aim_angle ) {
+__forceinline void move_mouse ( const apex::player& local, apex::vec3 aim_angle ) {
     if ( GetForegroundWindow ( ) != drv::window || !aim_angle.valid_angle ( ) )
         return;
 	
@@ -37,7 +38,7 @@ void move_mouse ( const apex::player& local, apex::vec3 aim_angle ) {
 }
 
 /* account for acceleration later */
-apex::vec3 predict_pos ( const apex::player& local, const apex::weapon& weapon, const apex::player& target, apex::vec3 pos ) {
+__forceinline apex::vec3 predict_pos ( const apex::player& local, const apex::weapon& weapon, const apex::player& target, apex::vec3 pos ) {
 	const auto v0 = weapon.get_bullet_speed ( );
 
 	/* dont predict for instant weapons */
@@ -58,7 +59,7 @@ apex::vec3 predict_pos ( const apex::player& local, const apex::weapon& weapon, 
 	const auto dt = src.dist_to( pos ) / v0;
 
 	/* predict player movement */
-	pos += ( target.get_velocity( ) - features::position::camera_velocity( ) ) * dt;
+	pos += ( target.get_velocity( ) - local.get_velocity() ) * dt;
 
 	/* predict bullet drop / gravity / bullet time */
 	pos.z += ( g * weapon.get_bullet_gravity( ) ) / 2.0f * ( dt * dt );
@@ -71,10 +72,24 @@ int features::aim::get_target( ) {
 }
 
 void features::aim::run ( ) {
-	constexpr auto aimbot_fov = 8.0f;
+	MUTATE_START;
+	static auto& aimbot_emable = options::vars [ _ ( "aimbot.enable" ) ].val.b;
+	static auto& aimbot_predict = options::vars [ _ ( "aimbot.predict" ) ].val.b;
+	static auto& aimbot_stable = options::vars [ _ ( "aimbot.stable" ) ].val.b;
+	static auto& aimbot_vischeck = options::vars [ _ ( "aimbot.vischeck" ) ].val.b;
+	static auto& aimbot_downed = options::vars [ _ ( "aimbot.downed" ) ].val.b;
+	static auto& aimbot_fov = options::vars [ _ ( "aimbot.fov" ) ].val.i;
+	static auto& aimbot_smooth = options::vars [ _ ( "aimbot.smooth" ) ].val.i;
+	static auto& aimbot_hitbox = options::vars [ _ ( "aimbot.hitbox" ) ].val.i;
 
 	while ( true ) {
-		apex::sleep( 0.005 );
+		if ( !aimbot_emable ) {
+			apex::sleep ( 0.1 );
+			cur_target = 0;
+			continue;
+		}
+
+		apex::sleep( 0.015 );
 
 		auto local = apex::local.get ( );
 		
@@ -118,17 +133,25 @@ void features::aim::run ( ) {
 
 		const auto my_team = local.get_team( );
 
+		auto target_bone = 12;
+		if ( aimbot_hitbox == 0 ) target_bone = 12;
+		else if ( aimbot_hitbox == 1 ) target_bone = 10;
+		else if ( aimbot_hitbox == 2 ) target_bone = 13;
+		else if ( aimbot_hitbox == 3 ) target_bone = 7;
+		else if ( aimbot_hitbox == 4 ) target_bone = 6;
+		else if ( aimbot_hitbox == 5 ) target_bone = 5;
+
 		for ( auto i = 0; i < apex::max_players; i++ ) {
 			/* only aim at visible players */
-			if ( !position::is_visible( i ) )
+			if ( aimbot_vischeck && !position::is_visible( i ) )
 				continue;
 
 			const auto ent = apex::player::get( i );
 
-			if ( !ent.is_valid( ) || ent.address( ) == local.address( ) || ent.get_team( ) == my_team || ent.is_downed( ) )
+			if ( !ent.is_valid( ) || ent.address( ) == local.address( ) || ent.get_team( ) == my_team || ( aimbot_downed?false: ent.is_downed ( ) ) )
 				continue;
 
-			const auto target_pos = position::get_bone( i , 12 /* bones_t::head */ );
+			const auto target_pos = position::get_bone( i , target_bone /* bones_t::head */ );
 
 			if ( !target_pos || target_pos.value( ).is_zero( ) || !target_pos.value( ).is_valid( ) )
 				continue;
@@ -137,8 +160,8 @@ void features::aim::run ( ) {
 
 			if ( origin.is_zero( ) || !origin.is_valid( ) )
 				continue;
-
-			auto absolute_pos = predict_pos( local , weapon , ent , target_pos.value( ) + origin );
+			
+			auto absolute_pos = aimbot_predict ? predict_pos( local , weapon , ent , target_pos.value( ) + origin ) : ( target_pos.value ( ) + origin );
 			const auto angle_to = camera.angle_to( absolute_pos ).normalize_angle( );
 
 			if ( !angle_to.valid_angle( ) )
@@ -146,7 +169,7 @@ void features::aim::run ( ) {
 
 			const auto fov = calculate_fov( camera , absolute_pos , angles );
 			const auto dist = camera.dist_to( absolute_pos ) / 650.0f;
-			const auto scaled_fov = std::clamp( aimbot_fov / dist , 0.8f , aimbot_fov );
+			const auto scaled_fov = std::clamp( static_cast< float >( aimbot_fov ) / dist , 0.8f , static_cast< float >( aimbot_fov ) );
 
 			if ( fov > scaled_fov /* aimbot fov scaled by distance */ || fov >= closest_fov )
 				continue;
@@ -158,21 +181,19 @@ void features::aim::run ( ) {
 		}
 
 		if ( closest_fov != std::numeric_limits<float>::max( ) ) {
-			closest_angle -= local.get_dynamic_angles( ) - local.get_angles( );
-			//aimbot_angle -= local.get_aim_punch( );
-			closest_angle = closest_angle.normalize_angle( );
-
-			if ( closest_angle.valid_angle( ) ) {
-				local.set_angles( closest_angle );
+			if ( aimbot_stable ) {
+				closest_angle -= local.get_dynamic_angles ( ) - local.get_angles ( );
+				closest_angle = closest_angle.normalize_angle ( );
 			}
-			//const auto delta_ang = ( closest_angle - local.get_angles( ) ).normalize_angle( );
-			//
-			//if ( delta_ang.valid_angle( ) ) {
-			//	const auto delta_ang_smoothed = delta_ang * 0.24f;
-			//
-			//	if ( delta_ang_smoothed.valid_angle( ) )
-			//		local.set_angles( ( local.get_angles( ) + delta_ang_smoothed ).normalize_angle( ) );
-			//}
+
+			const auto delta_ang = ( closest_angle - local.get_angles ( ) ).normalize_angle ( );
+
+			if ( delta_ang.valid_angle ( ) ) {
+				const auto delta_ang_smoothed = delta_ang * pow ( static_cast< float >( 100.0f - aimbot_smooth ) / 100.0f, 2.2f );
+
+				if ( delta_ang_smoothed.valid_angle ( ) )
+					local.set_angles ( ( local.get_angles ( ) + delta_ang_smoothed ).normalize_angle ( ) );
+			}
 
 			cur_target = closest_target_idx;
 		}
@@ -180,4 +201,5 @@ void features::aim::run ( ) {
 			cur_target = 0;
 		}
 	}
+	MUTATE_END;
 }

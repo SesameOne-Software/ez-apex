@@ -4,6 +4,7 @@
 
 #include <ntdef.h>
 #include <ntddk.h>
+#include <Include/C/ThemidaSDK.h>
 
 #include "xorstr/xorstr.hpp"
 
@@ -165,14 +166,14 @@ namespace fn {
 
 	namespace util {
 		template < typename t >
-		inline t get_routine( const wchar_t* name ) {
+		__forceinline t get_routine( const wchar_t* name ) {
 			UNICODE_STRING routine_name;
 			RtlInitUnicodeString ( &routine_name, name );
 			return ( t ) MmGetSystemRoutineAddress( &routine_name );
 		}
 	}
 
-	inline void init ( ) {
+	__forceinline void init ( ) {
 		MmCopyVirtualMemory = util::get_routine< types::MmCopyVirtualMemory_fn > ( _w(L"MmCopyVirtualMemory") );
 		ZwQuerySystemInformation = util::get_routine< types::ZwQuerySystemInformation_fn > ( _w(L"ZwQuerySystemInformation") );
 		PsCreateSystemThread = util::get_routine< types::PsCreateSystemThread_fn > ( _w(L"PsCreateSystemThread") );

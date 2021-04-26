@@ -463,7 +463,7 @@ namespace apex {
 	};
 
 	constexpr int max_entities = 0x10000;
-	constexpr int max_players = 128;
+	constexpr int max_players = 100;
 
 	inline uintptr_t base = 0;
 
@@ -526,16 +526,19 @@ namespace apex {
 	};
 
 	enum highlight_contexts_t {
-		HIGHLIGHT_CONTEXT_NONE = -1 ,
-		HIGHLIGHT_CONTEXT_NEUTRAL ,
-		HIGHLIGHT_CONTEXT_FRIENDLY ,
-		HIGHLIGHT_CONTEXT_ENEMY ,
-		HIGHLIGHT_CONTEXT_OWNED ,
-		HIGHLIGHT_CONTEXT_PINGED ,
-		HIGHLIGHT_CONTEXT_CAUSTIC_THREAT ,
-		HIGHLIGHT_CONTEXT_DEATH_RECAP ,
-		HIGHLIGHT_CONTEXT_SONAR ,
-		HIGHLIGHT_MAX_CONTEXTS
+		HIGHLIGHT_CONTEXT_NONE = -1,
+		HIGHLIGHT_CONTEXT_NEUTRAL = 0,
+		HIGHLIGHT_CONTEXT_FRIENDLY = 1,
+		HIGHLIGHT_CONTEXT_ENEMY = 2,
+		HIGHLIGHT_CONTEXT_OWNED = 3,
+		HIGHLIGHT_CONTEXT_PRIVATE_MATCH_OBSERVER = 4,
+		HIGHLIGHT_CHARACTER_SPECIAL_HIGHLIGHT = 5,
+		HIGHLIGHT_CONTEXT_DEATH_RECAP = 6,
+		HIGHLIGHT_CONTEXT_SONAR = 7,
+		HIGHLIGHT_CHARACTER_SPECIAL_HIGHLIGHT_2 = 8,
+		HIGHLIGHT_CONTEXT_FRIENDLY_REVEALED = 9,
+		HIGHLIGHT_CONTEXT_MOVEMENT_REVEALED = 10,
+		HIGHLIGHT_MAX_CONTEXTS = 11
 	};
 
 	enum highlight_outline_funcs_t {
@@ -555,6 +558,7 @@ namespace apex {
 	};
 
 	enum highlight_fill_funcs_t {
+		HIGHLIGHT_FILL_CUSTOM_COLOR = 101,
 		HIGHLIGHT_FILL_INTERACT_BUTTON = 103 ,
 		HIGHLIGHT_FILL_VM_CUSTOM_COLOR = 114 ,
 		HIGHLIGHT_FILL_NONE = 0 ,
@@ -692,7 +696,7 @@ namespace apex {
 			if ( !m_addr )
 				return false;
 
-			return !get_life_state ( );
+			return !get_life_state ( ) && get_health() > 0;
 		}
 
 		int get_health ( ) const {
@@ -721,6 +725,13 @@ namespace apex {
 				return false;
 
 			return identify_entity(m_addr) == entity_type_t::player;
+		}
+
+		bool is_npc ( ) const {
+			if ( !m_addr )
+				return false;
+
+			return identify_entity ( m_addr ) == entity_type_t::npc;
 		}
 
 		bool is_valid ( ) const {

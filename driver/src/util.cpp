@@ -364,32 +364,35 @@ void util::free_processes ( ) {
 PEPROCESS util::get_process ( u64 pid ) {
 	/* temp */
 	PEPROCESS ret = nullptr;
-	fn::PsLookupProcessByProcessId ( reinterpret_cast< void* >( pid ), &ret );
-	return ret;
 
-	/* real */
-	if ( !pid )
+	if ( !NT_SUCCESS ( fn::PsLookupProcessByProcessId ( reinterpret_cast< void* >( pid ), &ret ) ) )
 		return nullptr;
 
-	/* return process if it exists */
-	for ( auto& iter : cached_processes ) {
-		if ( iter.pid == pid ) {
-			if ( !iter.proc )
-				fn::PsLookupProcessByProcessId ( reinterpret_cast< void* >( pid ), &iter.proc );
+	return ret;
 
-			return iter.proc;
-		}
-	}
-
-	/* entry doesnt exist yet (find slot to put in) */
-	for ( auto& iter : cached_processes ) {
-		if ( !iter.pid ) {
-			iter.pid = pid;
-			fn::PsLookupProcessByProcessId ( reinterpret_cast< void* >( pid ), &iter.proc );
-			return iter.proc;
-		}
-	}
-
-	/* if we hit this, something went wrong */
-	return nullptr;
+	///* real */
+	//if ( !pid )
+	//	return nullptr;
+	//
+	///* return process if it exists */
+	//for ( auto& iter : cached_processes ) {
+	//	if ( iter.pid == pid ) {
+	//		if ( !iter.proc )
+	//			fn::PsLookupProcessByProcessId ( reinterpret_cast< void* >( pid ), &iter.proc );
+	//
+	//		return iter.proc;
+	//	}
+	//}
+	//
+	///* entry doesnt exist yet (find slot to put in) */
+	//for ( auto& iter : cached_processes ) {
+	//	if ( !iter.pid ) {
+	//		iter.pid = pid;
+	//		fn::PsLookupProcessByProcessId ( reinterpret_cast< void* >( pid ), &iter.proc );
+	//		return iter.proc;
+	//	}
+	//}
+	//
+	///* if we hit this, something went wrong */
+	//return nullptr;
 }

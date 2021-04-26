@@ -5132,7 +5132,7 @@ bool ImGui::ColorPicker4( const char* label, float col [ 4 ], ImGuiColorEditFlag
 
     const float width = CalcItemWidth( );
     g.NextItemData.ClearFlags( );
-
+    
     PushID( label );
     BeginGroup( );
 
@@ -5159,7 +5159,7 @@ bool ImGui::ColorPicker4( const char* label, float col [ 4 ], ImGuiColorEditFlag
     ImVec2 picker_pos = window->DC.CursorPos;
     float square_sz = GetFrameHeight( );
     float bars_width = square_sz; // Arbitrary smallish width of Hue/Alpha picking bars
-    float sv_picker_size = ImMax( bars_width * 1, width - ( alpha_bar ? 2 : 1 ) * ( bars_width + style.ItemInnerSpacing.x ) ); // Saturation/Value picking box
+    float sv_picker_size = ImMax( bars_width * 1, width - ( alpha_bar ? 2 : 1 ) * ( bars_width + style.ItemInnerSpacing.x ) ) * 0.42f; // Saturation/Value picking box
     float bar0_pos_x = picker_pos.x + sv_picker_size + style.ItemInnerSpacing.x;
     float bar1_pos_y = picker_pos.y + sv_picker_size + style.ItemInnerSpacing.y;
     float bars_triangles_half_sz = IM_FLOOR( bars_width * 0.20f );
@@ -5259,40 +5259,6 @@ bool ImGui::ColorPicker4( const char* label, float col [ 4 ], ImGuiColorEditFlag
         SetCursorScreenPos( ImVec2( picker_pos.x, bar1_pos_y ) );
     }
     PopItemFlag( ); // ImGuiItemFlags_NoNav
-
-    //if ( !( flags & ImGuiColorEditFlags_NoSidePreview ) ) {
-    //    SameLine( 0, style.ItemInnerSpacing.x );
-    //    BeginGroup( );
-    //}
-//
-    //if ( !( flags & ImGuiColorEditFlags_NoLabel ) ) {
-    //    const char* label_display_end = FindRenderedTextEnd( label );
-    //    if ( label != label_display_end ) {
-    //        if ( ( flags & ImGuiColorEditFlags_NoSidePreview ) )
-    //            SameLine( 0, style.ItemInnerSpacing.x );
-    //        TextEx( label, label_display_end );
-    //    }
-    //}
-
-    //if ( !( flags & ImGuiColorEditFlags_NoSidePreview ) ) {
-    //    PushItemFlag( ImGuiItemFlags_NoNavDefaultFocus, true );
-    //    ImVec4 col_v4( col [ 0 ], col [ 1 ], col [ 2 ], ( flags & ImGuiColorEditFlags_NoAlpha ) ? 1.0f : col [ 3 ] );
-    //    if ( ( flags & ImGuiColorEditFlags_NoLabel ) )
-    //        Text( "Current" );
-//
-    //    ImGuiColorEditFlags sub_flags_to_forward = ImGuiColorEditFlags__InputMask | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_NoTooltip;
-    //    ColorButton( "##current", col_v4, ( flags & sub_flags_to_forward ), ImVec2( square_sz * 3, square_sz * 2 ) );
-    //    if ( ref_col != NULL ) {
-    //        Text( "Original" );
-    //        ImVec4 ref_col_v4( ref_col [ 0 ], ref_col [ 1 ], ref_col [ 2 ], ( flags & ImGuiColorEditFlags_NoAlpha ) ? 1.0f : ref_col [ 3 ] );
-    //        if ( ColorButton( "##original", ref_col_v4, ( flags & sub_flags_to_forward ), ImVec2( square_sz * 3, square_sz * 2 ) ) ) {
-    //            memcpy( col, ref_col, components * sizeof( float ) );
-    //            value_changed = true;
-    //        }
-    //    }
-    //    PopItemFlag( );
-    //    EndGroup( );
-    //}
 
     // Convert back color to RGB
     if ( value_changed_h || value_changed_sv ) {

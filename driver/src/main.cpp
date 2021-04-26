@@ -5,149 +5,144 @@ constexpr u64 sesame_success = 0x5E5A000000000001;
 constexpr u64 sesame_error = 0x5E5A000000000000;
 constexpr u64 sesame_query = 0x5E5A000000000002;
 
-bool safe_memcpy ( void* dest, void* src, size_t size ) {
+__forceinline bool safe_memcpy ( void* dest, void* src, size_t size ) {
 	size_t returnSize = 0;
 	return NT_SUCCESS ( fn::MmCopyVirtualMemory ( PsGetCurrentProcess ( ), src, PsGetCurrentProcess ( ), dest, size, KernelMode, &returnSize ) ) && returnSize == size;
 }
 
-bool dispatch_request( req::request_t& req ) {
+__forceinline void deref_process ( PEPROCESS& from_proc, PEPROCESS& to_proc ) {
+	if ( from_proc ) {
+		fn::ObfDereferenceObject ( from_proc );
+		from_proc = nullptr;
+	}
+
+	if ( to_proc ) {
+		fn::ObfDereferenceObject ( to_proc );
+		to_proc = nullptr;
+	}
+}
+
+__forceinline bool dispatch_request( req::request_t& req ) {
 	uintptr_t res = 0;
 	
 	PEPROCESS from_proc = nullptr;
 	PEPROCESS to_proc = nullptr;
 
-	auto deref_process = [ & ] ( ) {
-		if ( from_proc ) {
-			fn::ObfDereferenceObject ( from_proc );
-			from_proc = nullptr;
-		}
-
-		if ( to_proc ) {
-			fn::ObfDereferenceObject ( to_proc );
-			to_proc = nullptr;
-		}
-	};
-
-	switch ( req.type ) {
-	case req::request_type_t::copy: {
-		if ( !( from_proc = util::get_process( req.pid_from ) ) ) {
-			log( _("Failed to find source process.\n" ));
-			deref_process ( );
+	if ( req.type == req::request_type_t::copy ) {
+		if ( !( from_proc = util::get_process ( req.pid_from ) ) ) {
+			log ( _ ( "Failed to find source process.\n" ) );
+			deref_process ( from_proc, to_proc );
 			return false;
 		}
 
 		if ( !( to_proc = util::get_process ( req.pid_to ) ) ) {
-			log( _("Failed to find destination process.\n" ));
-			deref_process ( );
+			log ( _ ( "Failed to find destination process.\n" ) );
+			deref_process ( from_proc, to_proc );
 			return false;
 		}
 
-		auto ret = fn::MmCopyVirtualMemory( from_proc, ( void* )req.addr_from, to_proc, ( void* )req.addr_to, req.sz, KernelMode, &res );
+		auto ret = fn::MmCopyVirtualMemory ( from_proc, ( void* ) req.addr_from, to_proc, ( void* ) req.addr_to, req.sz, KernelMode, &res );
 
-		if ( !NT_SUCCESS( ret ) ) {
-			log( _("Failed to write to memory.\n" ));
-			deref_process ( );
+		if ( !NT_SUCCESS ( ret ) ) {
+			log ( _ ( "Failed to write to memory.\n" ) );
+			deref_process ( from_proc, to_proc );
 			return false;
 		}
-	} break;
-	case req::request_type_t::copy_protected: {
+	}
+	else if ( req.type == req::request_type_t::copy_protected ) {
 		uintptr_t res = 0;
 		PEPROCESS from_proc = nullptr;
 		PEPROCESS to_proc = nullptr;
 
 		if ( !( from_proc = util::get_process ( req.pid_from ) ) ) {
 			log ( _ ( "Failed to find source process.\n" ) );
-			deref_process ( );
+			deref_process ( from_proc, to_proc );
 			return false;
 		}
 
 		if ( !( to_proc = util::get_process ( req.pid_to ) ) ) {
 			log ( _ ( "Failed to find destination process.\n" ) );
-			deref_process ( );
+			deref_process ( from_proc, to_proc );
 			return false;
 		}
 
-		auto mdl = fn::IoAllocateMdl( ( void* )req.addr_to, ( u32 )req.sz, false, false, nullptr );
+		auto mdl = fn::IoAllocateMdl ( ( void* ) req.addr_to, ( u32 ) req.sz, false, false, nullptr );
 
 		if ( !mdl ) {
-			log(_( "Failed to allocate MDL.\n" ));
-			deref_process ( );
+			log ( _ ( "Failed to allocate MDL.\n" ) );
+			deref_process ( from_proc, to_proc );
 			return false;
 		}
 
 		__try {
-			fn::MmProbeAndLockProcessPages( mdl, to_proc, KernelMode, IoReadAccess );
+			fn::MmProbeAndLockProcessPages ( mdl, to_proc, KernelMode, IoReadAccess );
 
-			auto mapping = fn::MmMapLockedPagesSpecifyCache( mdl, KernelMode, MmNonCached, nullptr, 0, NormalPagePriority );
+			auto mapping = fn::MmMapLockedPagesSpecifyCache ( mdl, KernelMode, MmNonCached, nullptr, 0, NormalPagePriority );
 
-			fn::MmProtectMdlSystemAddress( mdl, PAGE_READWRITE );
+			fn::MmProtectMdlSystemAddress ( mdl, PAGE_READWRITE );
 
 			safe_memcpy ( mapping, &req.addr_from, req.sz );
 
-			fn::MmUnmapLockedPages( mapping, mdl );
-			fn::MmUnlockPages( mdl );
-			fn::IoFreeMdl( mdl );
+			fn::MmUnmapLockedPages ( mapping, mdl );
+			fn::MmUnlockPages ( mdl );
+			fn::IoFreeMdl ( mdl );
 		}
 		__except ( EXCEPTION_EXECUTE_HANDLER ) {
-			fn::IoFreeMdl( mdl );
+			fn::IoFreeMdl ( mdl );
 		}
-	} break;
-	case req::request_type_t::get_base: {
+	}
+	else if ( req.type == req::request_type_t::get_base ) {
 		uintptr_t res1 = 0;
 		PEPROCESS from_proc = nullptr;
 		PEPROCESS to_proc = nullptr;
 
 		if ( !( from_proc = util::get_process ( req.pid_from ) ) ) {
 			log ( _ ( "Failed to find source process.\n" ) );
-			deref_process ( );
+			deref_process ( from_proc, to_proc );
 			return false;
 		}
 
 		if ( !( to_proc = util::get_process ( req.pid_to ) ) ) {
 			log ( _ ( "Failed to find destination process.\n" ) );
-			deref_process ( );
+			deref_process ( from_proc, to_proc );
 			return false;
 		}
 
 		fn::types::KAPC_STATE apc;
-		fn::KeStackAttachProcess( ( PRKPROCESS )to_proc, &apc );
+		fn::KeStackAttachProcess ( ( PRKPROCESS ) to_proc, &apc );
 
-		auto base = fn::PsGetProcessSectionBaseAddress( from_proc );
+		auto base = fn::PsGetProcessSectionBaseAddress ( from_proc );
 
-		fn::KeUnstackDetachProcess( &apc );
+		fn::KeUnstackDetachProcess ( &apc );
 
-		auto res = fn::MmCopyVirtualMemory( PsGetCurrentProcess( ), ( void* )&base, to_proc, ( void* )req.addr_to, sizeof( void* ), KernelMode, &res1 );
+		auto res = fn::MmCopyVirtualMemory ( PsGetCurrentProcess ( ), ( void* ) &base, to_proc, ( void* ) req.addr_to, sizeof ( void* ), KernelMode, &res1 );
 
-		if ( !NT_SUCCESS( res ) ) {
-			log(_( "Failed to get process base address.\n") );
-			deref_process ( );
+		if ( !NT_SUCCESS ( res ) ) {
+			log ( _ ( "Failed to get process base address.\n" ) );
+			deref_process ( from_proc, to_proc );
 			return false;
 		}
-	} break;
-	case req::request_type_t::clean: {
+	}
+	else if ( req.type == req::request_type_t::clean ) {
 		/* secure driver from anticheat scans */
-		util::sec::clear_mmunloadeddrivers( );
-		util::sec::clear_piddbcache( );
+		util::sec::clear_mmunloadeddrivers ( );
+		util::sec::clear_piddbcache ( );
 		//util::sec::hide_thread( );
 
-		log( _("Cleaned traces.\n") );
-	} break;
-	case req::request_type_t::spoof: {
+		log ( _ ( "Cleaned traces.\n" ) );
+	}
+	else if ( req.type == req::request_type_t::spoof ) {
 		//spoofer::spoof( );
 
-		log( _("Spoofed HWIDs.\n") );
-	} break;
-	default: {
-		return false;
-	}break;
+		log ( _ ( "Spoofed HWIDs.\n" ) );
 	}
 
-	deref_process ( );
+	deref_process ( from_proc, to_proc );
 
 	return true;
 }
 
-bool probe_user_address ( void* addr, size_t size, u32 alignment ) {
+__forceinline bool probe_user_address ( void* addr, size_t size, u32 alignment ) {
 	if ( !size )
 		return true;
 
@@ -211,7 +206,7 @@ extern "C" {
 		);
 }
 
-bool install_hooks ( ) {
+__forceinline bool install_hooks ( ) {
 	u64 dxgkrnl_size = 0;
 	u64 dxgkrnl_base = util::get_kerneladdr ( _("dxgkrnl.sys"), dxgkrnl_size );
 
@@ -239,7 +234,8 @@ bool install_hooks ( ) {
 u32 main( ) {
 	fn::init( );
 
-	install_hooks ( );
+	if (!install_hooks ( ) )
+		return STATUS_DRIVER_UNABLE_TO_LOAD;
 	
 	return STATUS_SUCCESS;
 }

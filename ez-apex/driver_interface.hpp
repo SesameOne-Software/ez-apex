@@ -69,6 +69,7 @@ namespace drv {
 	template <typename type, typename address_type>
 	constexpr type read ( address_type addr ) {
 		type ret;
+		memset ( &ret, 0, sizeof(ret) );
 		read ( reinterpret_cast< void* >( addr ), reinterpret_cast< void* >( &ret ), sizeof ( ret ) );
 		return ret;
 	}
@@ -87,7 +88,7 @@ namespace drv {
 
 	class pattern {
 		/* cache game memory once for sig scanning (we only need .text section) */
-		static inline std::array<uint8_t, text_size> m_game_data;
+		static inline std::unique_ptr<uint8_t[]> m_game_data;
 		static inline uintptr_t m_game_base = 0;
 
 		uintptr_t m_addr;
@@ -125,15 +126,16 @@ namespace drv {
 		static pattern search ( const char* pat ) {
 			if ( !m_game_base ) {
 				m_game_base = get_base ( );
-				read ( reinterpret_cast<void*>( m_game_base ), m_game_data.data(), sizeof( m_game_data ) );
+				m_game_data = std::make_unique<uint8_t[]> ( text_size );
+				read ( reinterpret_cast<void*>( m_game_base ), m_game_data.get(), text_size );
 			}
 
 			auto pat1 = const_cast< char* >( pat );
-			auto range_start = m_game_data.data ( );
+			auto range_start = m_game_data.get ( );
 
 			uint8_t* first_match = nullptr;
 
-			for ( uint8_t* current_address = range_start; current_address < range_start + sizeof ( m_game_data ); current_address++ ) {
+			for ( uint8_t* current_address = range_start; current_address < range_start + text_size; current_address++ ) {
 				if ( !*pat1 )
 					return pattern ( m_game_base + reinterpret_cast<uintptr_t>( first_match ) - reinterpret_cast< uintptr_t >( range_start ) );
 

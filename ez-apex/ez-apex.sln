@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ez-apex", "ez-apex.vcxproj"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "driver", "..\driver\driver.vcxproj", "{3E02D38F-CD31-4F5C-9F33-2EF599E542DB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "driver-loader", "..\driver-loader\driver-loader.vcxproj", "{6EC2F456-BCD5-449B-9384-3B21F1B72F05}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -57,18 +55,6 @@ Global
 		{3E02D38F-CD31-4F5C-9F33-2EF599E542DB}.Release|x86.ActiveCfg = Release|Win32
 		{3E02D38F-CD31-4F5C-9F33-2EF599E542DB}.Release|x86.Build.0 = Release|Win32
 		{3E02D38F-CD31-4F5C-9F33-2EF599E542DB}.Release|x86.Deploy.0 = Release|Win32
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Debug|ARM.ActiveCfg = Debug|Win32
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Debug|ARM64.ActiveCfg = Debug|Win32
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Debug|x64.ActiveCfg = Debug|x64
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Debug|x64.Build.0 = Debug|x64
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Debug|x86.ActiveCfg = Debug|Win32
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Debug|x86.Build.0 = Debug|Win32
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Release|ARM.ActiveCfg = Release|Win32
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Release|ARM64.ActiveCfg = Release|Win32
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Release|x64.ActiveCfg = Release|x64
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Release|x64.Build.0 = Release|x64
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Release|x86.ActiveCfg = Release|Win32
-		{6EC2F456-BCD5-449B-9384-3B21F1B72F05}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
