@@ -8,10 +8,11 @@
 #include <numbers>
 #include <algorithm>
 #include <optional>
+#include <string>
 
 #include "../security/security.hpp"
 
-constexpr uint32_t hash ( char const* input ) {
+constexpr __forceinline uint32_t hash ( char const* input ) {
 	return *input ?
 		static_cast< uint32_t >( *input ) + 33 * hash ( input + 1 ) :
 		1234;
@@ -21,7 +22,9 @@ namespace apex {
 	namespace offsets {
 		inline uintptr_t entity_list = 0;
 		inline uintptr_t local_entity = 0;
+		inline uintptr_t player_name_list = 0;
 
+		inline ptrdiff_t entity_index = 0;
 		inline ptrdiff_t entity_life_state = 0;
 		inline ptrdiff_t entity_health = 0;
 		inline ptrdiff_t entity_team_num = 0;
@@ -463,7 +466,7 @@ namespace apex {
 	};
 
 	constexpr int max_entities = 0x10000;
-	constexpr int max_players = 100;
+	constexpr int max_players = 128;
 
 	inline uintptr_t base = 0;
 
@@ -483,6 +486,11 @@ namespace apex {
 		int64_t serial_number;
 		uint64_t prev;
 		uint64_t next;
+	};
+
+	struct player_name_info_t {
+		const char* name_with_clantag;
+		const char* name;
 	};
 
 	enum class weapons_t : uint32_t {
@@ -699,6 +707,13 @@ namespace apex {
 			return !get_life_state ( ) && get_health() > 0;
 		}
 
+		int get_index ( ) const {
+			if ( !m_addr )
+				return 0;
+
+			return drv::read<int> ( m_addr + offsets::entity_index );
+		}
+
 		int get_health ( ) const {
 			if ( !m_addr )
 				return 0;
@@ -826,6 +841,32 @@ namespace apex {
 				return 0.0f;
 
 			return drv::read<float> ( m_addr + offsets::player_last_visible_time );
+		}
+
+		std::string get_player_name ( ) const {
+			if ( !m_addr )
+				return _ ( "" );
+
+			const auto unknown_player_name = drv::read<player_name_info_t> ( offsets::player_name_list + sizeof ( player_name_info_t ) * 0 );
+			const auto player_name = drv::read<player_name_info_t> ( offsets::player_name_list + sizeof ( player_name_info_t ) * get_index ( ) );
+
+			if ( unknown_player_name.name == player_name.name )
+				return _ ( "" );
+
+			return drv::read<std::array<char, 128>> ( ( uintptr_t ) player_name.name ).data ( );
+		}
+
+		std::string get_player_name_with_clantag ( ) const {
+			if ( !m_addr )
+				return _ ( "" );
+
+			const auto unknown_player_name = drv::read<player_name_info_t> ( offsets::player_name_list + sizeof ( player_name_info_t ) * 0 );
+			const auto player_name = drv::read<player_name_info_t> ( offsets::player_name_list + sizeof ( player_name_info_t ) * get_index ( ) );
+
+			if ( unknown_player_name.name_with_clantag == player_name.name_with_clantag )
+				return _ ( "" );
+
+			return drv::read<std::array<char, 128>> ( ( uintptr_t ) player_name.name_with_clantag ).data ( );
 		}
 
 		float get_crosshair_time( ) const {

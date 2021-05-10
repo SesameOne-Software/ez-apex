@@ -46,7 +46,10 @@ void features::glow::run ( ) {
 			drv::write ( ptr + apex::offsets::glow_context + 0x90, true );
 			drv::write ( ptr + apex::offsets::glow_context, 1 );
 
-			if ( visuals_target && aim_target == i )
+			const auto name = ent.get_player_name ( );
+			const auto is_streamer = name.size() >= 3 && tolower ( name [ 0 ] ) == 't' && tolower ( name [ 1 ] ) == 't' && tolower ( name [ 2 ] ) == 'v';
+
+			if ( visuals_target &&( aim_target == i || is_streamer) )
 				drv::write ( ptr + apex::offsets::glow_color, std::array<float, 3>{visuals_target_color.r* visuals_target_color.a, visuals_target_color.g* visuals_target_color.a, visuals_target_color.b* visuals_target_color.a} );
 			else if ( visuals_health_based )
 				drv::write ( ptr + apex::offsets::glow_color, std::array<float, 3>{( 1.0f - health_norm )* alpha, health_norm* alpha, 0.0f} );

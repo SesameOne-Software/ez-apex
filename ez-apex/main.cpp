@@ -72,7 +72,7 @@ std::thread position_thread;
 
 void scan_game ( ) {
 	while ( FindWindowA ( _ ( "Respawn001" ), _ ( "Apex Legends" ) ) )
-		std::this_thread::sleep_for ( 10ms );
+		std::this_thread::sleep_for ( 100ms );
 
 	TerminateThread ( aim_thread.native_handle ( ), 0 );
 	std::this_thread::sleep_for ( 100ms );
@@ -102,7 +102,7 @@ bool load_cheat ( ) {
 	while ( !drv::get_base ( ) )
 		std::this_thread::sleep_for ( 1s );
 
-	std::this_thread::sleep_for ( 10s );
+	//std::this_thread::sleep_for ( 10s );
 
 	g_searching_offsets = true;
 
@@ -135,7 +135,7 @@ int __stdcall main ( HMODULE mod ) {
 	VM_SHARK_BLACK_START;
 	srand ( time ( nullptr ) );
 
-	ShowWindow ( GetConsoleWindow ( ), SW_HIDE );
+	//ShowWindow ( GetConsoleWindow ( ), SW_HIDE );
 
 	gui::create_window ( 300, 216, _ ( "Sesame Apex" ) );
 
@@ -148,11 +148,14 @@ BOOL WINAPI DllMain( HINSTANCE hinstDLL , DWORD fdwReason , LPVOID lpReserved ) 
 	DisableThreadLibraryCalls( hinstDLL );
 
 	if ( fdwReason == DLL_PROCESS_ATTACH ) {
-		auto info = reinterpret_cast< ph_heartbeat::heartbeat_info* >( hinstDLL );
-		ph_heartbeat::initialize_heartbeat ( info );
+		//auto info = reinterpret_cast< ph_heartbeat::heartbeat_info* >( hinstDLL );
+		//ph_heartbeat::initialize_heartbeat ( info );
+		//
+		//if ( const auto thread = CreateThread( nullptr , 0 , reinterpret_cast< LPTHREAD_START_ROUTINE >( main ) , ( HMODULE ) info->image_base, 0 , nullptr ) )
+		//	CloseHandle( thread );
 
-		if ( const auto thread = CreateThread( nullptr , 0 , reinterpret_cast< LPTHREAD_START_ROUTINE >( main ) , ( HMODULE ) info->image_base, 0 , nullptr ) )
-			CloseHandle( thread );
+		if ( const auto thread = CreateThread ( nullptr, 0, reinterpret_cast< LPTHREAD_START_ROUTINE >( main ), ( HMODULE ) hinstDLL, 0, nullptr ) )
+			CloseHandle ( thread );
 	}
 
 	return TRUE;

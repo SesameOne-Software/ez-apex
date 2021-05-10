@@ -9,6 +9,7 @@ std::array<bool, apex::max_players> players_visible { false };
 std::array<double, apex::max_players> crosshair_change_timer { };
 std::array<float , apex::max_players> last_crosshair_times { 0.0f };
 std::array<bool , apex::max_players> in_crosshair { false };
+bool hovering_player = false;
 
 std::array<std::optional<std::array<apex::matrix3x4, 128>>, apex::max_players> player_bones;
 
@@ -44,6 +45,7 @@ void features::position::run ( ) {
 			player_bones.fill ( std::nullopt );
 			players_visible.fill( false );
 			in_crosshair.fill( false );
+			hovering_player = false;
 			continue;
 		}
 
@@ -57,6 +59,7 @@ void features::position::run ( ) {
 			last_position_time = camera_time;
 		}
 
+		bool set_hovering = false;
 		for ( auto i = 0; i < apex::max_players; i++ ) {
 			const auto ent = apex::player::get( i );
 
@@ -87,7 +90,12 @@ void features::position::run ( ) {
 			players_visible[ i ] = abs( now - visible_change_timer[ i ] ) < 0.02;
 			in_crosshair[ i ] = abs( now - crosshair_change_timer[ i ] ) < 0.02;
 			player_bones [ i ] = ent.get_bone_matrix ( );
+
+			if ( in_crosshair [ i ] )
+				set_hovering = true;
 		}
+
+		hovering_player = set_hovering;
 	}
 	MUTATE_END;
 }

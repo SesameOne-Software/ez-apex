@@ -67,7 +67,7 @@ namespace drv {
 
 	/* wrappers for memory management functions */
 	template <typename type, typename address_type>
-	constexpr type read ( address_type addr ) {
+	constexpr __forceinline type read ( address_type addr ) {
 		type ret;
 		memset ( &ret, 0, sizeof(ret) );
 		read ( reinterpret_cast< void* >( addr ), reinterpret_cast< void* >( &ret ), sizeof ( ret ) );
