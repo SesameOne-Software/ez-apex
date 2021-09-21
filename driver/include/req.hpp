@@ -10,7 +10,8 @@ namespace req {
 		get_base,
 		clean,
 		spoof,
-		query
+		unload,
+		query,
 	};
 
 #pragma pack(push, 1)

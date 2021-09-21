@@ -3,16 +3,22 @@
 #include <time.h>
 #include "fn.hpp"
 
+#include "vmp.hpp"
+
 #define log //DbgPrint
+
+#define offsetof(s,m) ((size_t)&(((s*)0)->m))
 
 namespace util {
 	u64 get_kerneladdr ( const char* name, u64& size );
 
 	namespace sec {
 		void restore_thread ( );
-		void clear_piddbcache ( );
-		void clear_mmunloadeddrivers ( );
-		void hide_thread ( );
+		bool clear_piddbcache ( );
+		bool clear_mmunloadeddrivers ( );
+		bool clear_kernelhashbucketlist ( );
+		bool hide_thread ( );
+		bool clear_big_pool_table ( );
 	}
 
 	void delay ( );
@@ -41,6 +47,7 @@ namespace util {
 	}
 
 	inline int rand_serial ( char* out ) {
+		VMP_BEGINMUTATION ( );
 		static const char letters_caps [ ] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		static const char letters_min [ ] = "abcdefghijklmnopqrstuvwxyz";
 		static const char numbers [ ] = "1234567890";
@@ -59,5 +66,6 @@ namespace util {
 		}
 
 		return len;
+		VMP_END ( );
 	}
 }

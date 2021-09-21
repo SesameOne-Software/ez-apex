@@ -7,6 +7,7 @@ inline HWND g_window = nullptr;
 inline IDirect3DDevice9* g_d3d_device = nullptr;
 inline bool g_close_gui = false;
 inline bool g_searching_offsets = false;
+inline bool g_clean_failed = false;
 
 namespace gui {
 	inline bool mdown = false;

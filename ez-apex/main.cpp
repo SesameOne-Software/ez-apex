@@ -16,7 +16,7 @@
 #pragma comment(lib, "d3d9.lib")
 
 bool load_driver( ) {
-	VM_TIGER_WHITE_START;
+	VMP_BEGINULTRA ( );
 
 	if ( drv::is_loaded( ) )
 		return true;
@@ -30,40 +30,41 @@ bool load_driver( ) {
 	if ( intel_driver::IsRunning( ) )
 		return false;
 
+	//FILE* fileptr;
+	//char* buffer;
+	//long filelen;
+	//
+	//fileptr = fopen ( "driver.sys", "rb" );  // Open the file in binary mode
+	//fseek ( fileptr, 0, SEEK_END );          // Jump to the end of the file
+	//filelen = ftell ( fileptr );             // Get the current byte offset in the file
+	//rewind ( fileptr );                      // Jump back to the beginning of the file
+	//
+	//buffer = ( char* ) malloc ( filelen * sizeof ( char ) ); // Enough memory for the file
+	//fread ( buffer, filelen, 1, fileptr ); // Read in the entire file
+	//fclose ( fileptr ); // Close the file
+
 	HANDLE iqvw64e_device_handle = intel_driver::Load( );
 
-	if ( !iqvw64e_device_handle || iqvw64e_device_handle == INVALID_HANDLE_VALUE ) {
+	if ( !iqvw64e_device_handle || iqvw64e_device_handle == INVALID_HANDLE_VALUE || !kdmapper::MapDriver ( iqvw64e_device_handle, /*( unsigned char* ) buffer*/driver_bytes ) ) {
 		intel_driver::Unload( iqvw64e_device_handle );
-		return false;
-	}
-
-	if ( !intel_driver::ClearPiDDBCacheTable( iqvw64e_device_handle ) ) {
-		intel_driver::Unload( iqvw64e_device_handle );
-		return false;
-	}
-
-	if ( !intel_driver::ClearKernelHashBucketList( iqvw64e_device_handle ) ) {
-		intel_driver::Unload( iqvw64e_device_handle );
-		return false;
-	}
-
-	if ( !kdmapper::MapDriver( iqvw64e_device_handle , driver_bytes ) ) {
-		intel_driver::Unload( iqvw64e_device_handle );
-		return false;
-	}
-
-	if ( !intel_driver::ClearMmUnloadedDrivers ( iqvw64e_device_handle ) ) {
-		intel_driver::Unload ( iqvw64e_device_handle );
 		return false;
 	}
 
 	intel_driver::Unload( iqvw64e_device_handle );
 
+	if ( !drv::clean_traces ( ) ) {
+		g_clean_failed = true;
+
+		drv::unload ( );
+
+		return false;
+	}
+
 	if ( !drv::is_loaded( ) )
 		return false;
 
 	return true;
-	VM_TIGER_WHITE_END;
+	VMP_END ( );
 }
 
 std::thread aim_thread;
@@ -71,6 +72,7 @@ std::thread glow_thread;
 std::thread position_thread;
 
 void scan_game ( ) {
+	VMP_BEGINMUTATION ( );
 	while ( FindWindowA ( _ ( "Respawn001" ), _ ( "Apex Legends" ) ) )
 		std::this_thread::sleep_for ( 100ms );
 
@@ -81,11 +83,12 @@ void scan_game ( ) {
 	TerminateThread ( position_thread.native_handle ( ), 0 );
 	std::this_thread::sleep_for ( 100ms );
 
-	exit ( 0 );
+	__debugbreak ( );
+	VMP_END ( );
 }
 
 bool load_cheat ( ) {
-	VM_TIGER_WHITE_START;
+	VMP_BEGINULTRA ( );
 	drv::window = nullptr;
 
 	while ( !( drv::window = FindWindowA ( _ ( "Respawn001" ), _ ( "Apex Legends" ) ) ) )
@@ -128,19 +131,21 @@ bool load_cheat ( ) {
 	g_searching_offsets = false;
 
 	return true;
-	VM_TIGER_WHITE_END;
+	VMP_END ( );
 }
 
 int __stdcall main ( HMODULE mod ) {
-	VM_SHARK_BLACK_START;
+	VMP_BEGINULTRA ( );
 	srand ( time ( nullptr ) );
 
-	//ShowWindow ( GetConsoleWindow ( ), SW_HIDE );
+	ShowWindow ( GetConsoleWindow ( ), SW_HIDE );
 
 	gui::create_window ( 300, 216, _ ( "Sesame Apex" ) );
 
+	VMP_END ( );
+	VMP_BEGINULTRA ( );
 	return gui::render ( );
-	VM_SHARK_BLACK_END;
+	VMP_END ( );
 }
 
 #ifdef DLL_MODE

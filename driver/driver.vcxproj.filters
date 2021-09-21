@@ -45,6 +45,15 @@
     <ClInclude Include="include\hk\hk.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VMProtect\Include\C\VMProtectDDK.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VMProtect\Include\C\VMProtectSDK.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vmp.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -56,5 +65,15 @@
     <ClCompile Include="include\hk\hk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="src\unload_driver.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="VMProtect\Include\ASM\VMProtectSDK.inc">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -72,7 +72,9 @@ int features::aim::get_target( ) {
 }
 
 void features::aim::run ( ) {
-	MUTATE_START;
+	VMP_BEGINMUTATION ( );
+	SetThreadPriority ( GetCurrentThread ( ), THREAD_PRIORITY_TIME_CRITICAL );
+
 	static auto& aimbot_emable = options::vars [ _ ( "aimbot.enable" ) ].val.b;
 	static auto& aimbot_predict = options::vars [ _ ( "aimbot.predict" ) ].val.b;
 	static auto& aimbot_stable = options::vars [ _ ( "aimbot.stable" ) ].val.b;
@@ -148,7 +150,7 @@ void features::aim::run ( ) {
 
 			const auto ent = apex::player::get( i );
 
-			if ( !ent.is_valid( ) || ent.address( ) == local.address( ) || ent.get_team( ) == my_team || ( aimbot_downed?false: ent.is_downed ( ) ) )
+			if ( !ent.is_valid( ) || ent.address( ) == local.address( ) || ent.get_team( ) == my_team || ( aimbot_downed ? false : ent.is_downed ( ) ) )
 				continue;
 
 			const auto target_pos = position::get_bone( i , target_bone /* bones_t::head */ );
@@ -182,7 +184,10 @@ void features::aim::run ( ) {
 
 		if ( closest_fov != std::numeric_limits<float>::max( ) ) {
 			if ( aimbot_stable ) {
-				closest_angle -= local.get_dynamic_angles ( ) - local.get_angles ( );
+				/* no recoil for instant weapons */
+				if ( weapon.get_bullet_speed ( ) > 1.0f )
+					closest_angle -= local.get_dynamic_angles ( ) - local.get_angles ( );
+
 				closest_angle = closest_angle.normalize_angle ( );
 			}
 
@@ -201,5 +206,5 @@ void features::aim::run ( ) {
 			cur_target = 0;
 		}
 	}
-	MUTATE_END;
+	VMP_END ( );
 }

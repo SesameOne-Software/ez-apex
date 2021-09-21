@@ -53,13 +53,13 @@ apex::entity_type_t apex::identify_entity ( uintptr_t ent ) {
 }
 
 bool apex::offsets::dump( ) {
+	VMP_BEGINULTRA ( );
 	static bool tried_dump = false;
 
 	if ( tried_dump ) {
 		return false;
 	}
 	else {
-		VM_DOLPHIN_WHITE_START;
 		tried_dump = true;
 		if ( !( entity_list = drv::pattern::search ( _ ( "45 33 C9 48 8D 05 ? ? ? ? 4C 89 0D" ) ).add ( 6 ).resolve_rip ( ).get<uintptr_t> ( ) ) ) return false;
 
@@ -123,13 +123,14 @@ bool apex::offsets::dump( ) {
 		if ( !( global_vars = drv::pattern::search ( _ ( "48 8B 05 ? ? ? ? 8B 48 10 89 8B" ) ).add ( 3 ).resolve_rip ( ).deref ( ).get<ptrdiff_t> ( ) ) ) return false;
 
 		return true;
-		VM_DOLPHIN_WHITE_END;
 	}
 	
 	return false;
+	VMP_END ( );
 }
 
 bool apex::init ( ) {
+	VMP_BEGINMUTATION ( );
 	if ( !( base = drv::get_base ( ) ) )
 		return false;
 
@@ -137,4 +138,5 @@ bool apex::init ( ) {
 		return false;
 
 	return true;
+	VMP_END ( );
 }

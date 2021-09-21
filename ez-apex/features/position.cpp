@@ -33,7 +33,9 @@ bool features::position::is_visible ( int ent_idx ) {
 }
 
 void features::position::run ( ) {
-	MUTATE_START;
+	VMP_BEGINMUTATION ( );
+	SetThreadPriority ( GetCurrentThread ( ), THREAD_PRIORITY_TIME_CRITICAL );
+
 	while ( true ) {
 		apex::sleep( 0.005 );
 
@@ -97,5 +99,5 @@ void features::position::run ( ) {
 
 		hovering_player = set_hovering;
 	}
-	MUTATE_END;
+	VMP_END ( );
 }

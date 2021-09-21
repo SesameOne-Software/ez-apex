@@ -1,5 +1,7 @@
 #include "gui.hpp"
 
+#include "driver_interface.hpp"
+
 #include "security/security.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx9.h"
@@ -42,6 +44,7 @@ __forceinline bool create_device(HWND hWnd) {
 	g_d3d_pparams.BackBufferFormat = D3DFMT_A8R8G8B8;
 	g_d3d_pparams.EnableAutoDepthStencil = TRUE;
 	g_d3d_pparams.AutoDepthStencilFormat = D3DFMT_D16;
+	g_d3d_pparams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 
 	if (g_d3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &g_d3d_pparams, &g_d3d_device) < 0)
 		return false;
@@ -66,7 +69,7 @@ void reset_device() {
 
 	if ( g_d3d_device->Reset ( &g_d3d_pparams ) == D3DERR_INVALIDCALL ) {
 		MessageBoxA( nullptr, _ ( "Fatal error while attempting to reset device!" ), _ ( "Error" ), MB_OK | MB_ICONEXCLAMATION );
-		exit( 1 );
+		__debugbreak ( );
 	}
 
 	ImGui_ImplDX9_CreateDeviceObjects( );
@@ -157,7 +160,7 @@ bool running_waiting_for_game = false;
 bool found_game = false;
 
 int gui::render( ) {
-	VM_TIGER_RED_START;
+	VMP_BEGINMUTATION ( );
 	MSG msg {};
 	LARGE_INTEGER li { 0 };
 
@@ -191,10 +194,8 @@ int gui::render( ) {
 	gui_icons_font->SetFallbackChar( '?' );
 
 	ImGui::GetStyle( ).AntiAliasedFill = ImGui::GetStyle( ).AntiAliasedLines = true;
-	VM_TIGER_RED_END;
 
 	while ( msg.message != WM_QUIT && !g_close_gui ) {
-		VM_TIGER_RED_START;
 		if ( PeekMessageA( &msg , nullptr , 0 , 0 , PM_REMOVE ) ) {
 			TranslateMessage( &msg );
 			DispatchMessageA( &msg );
@@ -208,10 +209,8 @@ int gui::render( ) {
 		ImGui::PushFont( gui_ui_font );
 
 		bool open = true;
-		VM_TIGER_RED_END;
 
 		if ( ImGui::custom::Begin( _( "© 2019-2021 Sesame Software" ) , &open , gui_small_font ) ) {
-			VM_TIGER_RED_START;
 			if ( ImGui::custom::BeginTabs( &cur_tab_idx , gui_icons_font ) ) {
 				/* aimbot, visuals, misc, config */
 				if ( driver_loaded && found_game ) {
@@ -238,10 +237,7 @@ int gui::render( ) {
 				ImGui::EndPopup( );
 			}
 
-			VM_TIGER_RED_END;
-
 			if ( !driver_loaded || !found_game ) {
-				VM_TIGER_RED_START;
 				if ( running_driver_loader || running_waiting_for_game ) {
 					const auto r = 8.0f;
 					ImGui::SetCursorPos ( ImVec2 ( ImGui::GetWindowContentRegionMax ( ).x * 0.5f - r, ImGui::GetWindowContentRegionMax ( ).y * 0.5f - r ) );
@@ -263,6 +259,11 @@ int gui::render( ) {
 											|| FindWindowA ( _ ( "EACLauncherWnd" ), nullptr )
 											|| FindWindowA ( _ ( "EACLauncherChildWnd" ), nullptr ) ) {
 											popup_text = _ ( "Please close the game." );
+											popup_title = _ ( "Error" );
+											open_popup = true;
+										}
+										else if ( g_clean_failed ) {
+											popup_text = _ ( "Failed to clean traces." );
 											popup_title = _ ( "Error" );
 											open_popup = true;
 										}
@@ -295,14 +296,15 @@ int gui::render( ) {
 							}
 						} ).detach ( );
 					}
+
+					//if ( drv::is_loaded ( ) && ImGui::Button ( _ ( "Unload" ), ImVec2 ( -1.0f, 0.0f ) ) )
+					//	drv::unload ( );
 				}
-				VM_TIGER_RED_END;
 			}
 			else {
 				ImGui::PushItemWidth ( -1.0f );
 				switch ( cur_tab_idx ) {
 				case 0: /* aimbot */ {
-					VM_TIGER_RED_START;
 					ImGui::Checkbox ( _ ( "Enable aimbot" ), &options::vars [ _ ( "aimbot.enable" ) ].val.b );
 
 					if ( !options::vars [ _ ( "aimbot.enable" ) ].val.b ) {
@@ -329,10 +331,8 @@ int gui::render( ) {
 						ImGui::PopStyleColor ( );
 						ImGui::PopStyleColor ( );
 					}
-					VM_TIGER_RED_END;
 				} break;
 				case 1: /* visuals */ {
-					VM_TIGER_RED_START;
 					ImGui::Checkbox ( _ ( "Enable visuals" ), &options::vars [ _ ( "visuals.enable" ) ].val.b );
 					if ( !options::vars [ _ ( "visuals.enable" ) ].val.b ) {
 						ImGui::PushItemFlag ( ImGuiItemFlags_Disabled, true );
@@ -356,24 +356,19 @@ int gui::render( ) {
 						ImGui::PopStyleColor ( );
 						ImGui::PopStyleColor ( );
 					}
-					VM_TIGER_RED_END;
 				} break;
 				case 2: /* misc */ {
-					VM_TIGER_RED_START;
-					VM_TIGER_RED_END;
+
 				} break;
 				case 3: /* config */ {
-					VM_TIGER_RED_START;
 					if ( ImGui::Button ( _ ( "Save" ), ImVec2 ( -1.0f, 0.0f ) ) );
 					if ( ImGui::Button ( _ ( "Load" ), ImVec2 ( -1.0f, 0.0f ) ) );
-					VM_TIGER_RED_END;
 				} break;
 				}
 
 				ImGui::PopItemWidth ( );
 			}
 
-			VM_TIGER_RED_START;
 			if ( open_popup_next_frame ) {
 				ImGui::OpenPopup( ( popup_title + _( "##Popup" ) ).c_str( ) );
 				open_popup_next_frame = false;
@@ -385,10 +380,8 @@ int gui::render( ) {
 			}
 
 			ImGui::custom::End( );
-			VM_TIGER_RED_END;
 		}
 
-		VM_TIGER_RED_START;
 		ImGui::PopFont( );
 		ImGui::EndFrame( );
 
@@ -405,10 +398,8 @@ int gui::render( ) {
 
 		if ( result == D3DERR_DEVICELOST && g_d3d_device->TestCooperativeLevel( ) == D3DERR_DEVICENOTRESET )
 			reset_device( );
-		VM_TIGER_RED_END;
 	}
 
-	VM_TIGER_RED_START;
 	ImGui_ImplDX9_Shutdown( );
 	ImGui_ImplWin32_Shutdown( );
 	ImGui::DestroyContext( );
@@ -419,5 +410,5 @@ int gui::render( ) {
 	UnregisterClassA( g_wc.lpszClassName , g_wc.hInstance );
 
 	return 0;
-	VM_TIGER_RED_END;
+	VMP_END ( );
 }

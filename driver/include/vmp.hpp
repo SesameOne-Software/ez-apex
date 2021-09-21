@@ -1,10 +1,7 @@
 #pragma once
 
-#include "lazy_importer.hpp"
-#include "xorstr.hpp"
-
 #ifdef VMPROTECT
-#include "../VMProtect/Include/C/VMProtectSDK.h"
+#include "../VMProtect/Include/C/VMProtectDDK.h"
 
 #define VMP_STRINGIFY_(x) #x
 #define VMP_STRINGIFY(x) VMP_STRINGIFY_(x)

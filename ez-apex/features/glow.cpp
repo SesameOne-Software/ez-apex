@@ -8,7 +8,9 @@
 #undef min
 
 void features::glow::run ( ) {
-	MUTATE_START;
+	VMP_BEGINMUTATION ( );
+	SetThreadPriority ( GetCurrentThread ( ), THREAD_PRIORITY_TIME_CRITICAL );
+
 	static auto& visuals_enable = options::vars [ _ ( "visuals.enable" ) ].val.b;
 	static auto& visuals_chams = options::vars [ _ ( "visuals.chams" ) ].val.b;
 	static auto& visuals_xqz = options::vars [ _ ( "visuals.xqz" ) ].val.b;
@@ -73,5 +75,5 @@ void features::glow::run ( ) {
 			}
 		}
 	}
-	MUTATE_END;
+	VMP_END ( );
 }

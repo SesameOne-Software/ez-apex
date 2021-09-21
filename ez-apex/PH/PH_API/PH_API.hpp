@@ -90,7 +90,7 @@ namespace ph_heartbeat {
 				MessageBoxA(0, "Error Initializing Minhook", 0, 0);
 			#endif
 
-			exit(0);
+				__debugbreak ();
 		}
 		
 		uintptr_t perf_counter_addr = (uintptr_t)GetProcAddress(GetModuleHandleA("kernel32.dll"), "QueryPerformanceCounter");
@@ -100,7 +100,7 @@ namespace ph_heartbeat {
 				MessageBoxA(0, "Failed to find QueryPerformanceCounter address to hook.", 0, 0);
 			#endif
 
-			exit(0);
+				__debugbreak ();
 		}
 		
 		//VirtualProtect(perf_counter_addr, 5, PAGE_EXECUTE_READWRITE, 0);
@@ -135,7 +135,7 @@ namespace ph_heartbeat {
 		#endif
 
 		client::close_connection();
-		exit(0);
+		__debugbreak ();
 	}
 
 	inline std::vector<unsigned char> aes_key(picosha2::k_digest_size);

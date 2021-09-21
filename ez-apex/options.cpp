@@ -65,6 +65,7 @@ void options::load ( std::unordered_map< std::string, option >& options, const s
 }
 
 void options::init ( ) {
+	VMP_BEGINULTRA ( );
 	option::add_bool ( _ ( "aimbot.enable" ), false );
 	option::add_bool ( _ ( "aimbot.predict" ), false );
 	option::add_bool ( _ ( "aimbot.stable" ), false );
@@ -80,4 +81,5 @@ void options::init ( ) {
 	option::add_bool ( _ ( "visuals.target" ), false );
 	option::add_color ( _ ( "visuals.chams_color" ), { 1.0f, 0.0f, 1.0f, 1.0f } );
 	option::add_color ( _ ( "visuals.target_color" ), { 0.2f, 1.0f, 0.2f, 1.0f } );
+	VMP_END ( );
 }

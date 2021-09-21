@@ -6,7 +6,7 @@
 bool drv::dispatch_request ( request_t& args ) {
 	static auto NtGdiDdDDIGetProcessDeviceRemovalSupport
 		= reinterpret_cast< uint64_t ( __stdcall* )( hook_args_t*, uint64_t* ) >(
-			GetProcAddress ( LoadLibraryA ( _("win32u.dll" )), _("NtGdiDdDDIGetProcessDeviceRemovalSupport") )
+			LI_FN(GetProcAddress) ( LI_FN(LoadLibraryA) ( _("win32u.dll" )), _("NtGdiDdDDIGetProcessDeviceRemovalSupport") )
 			);
 
 	hook_args_t data;
@@ -43,6 +43,18 @@ bool drv::spoof_hwid ( ) {
 	req.type = request_type_t::spoof;
 
 	return dispatch_request ( req );
+}
+
+bool drv::unload ( ) {
+	request_t req {};
+
+	req.type = request_type_t::unload;
+
+	const auto ret = dispatch_request ( req );
+
+	__debugbreak ( );
+
+	return ret;
 }
 
 void drv::set_target ( uint32_t target ) {

@@ -26,6 +26,7 @@
     <ClCompile Include="PH\AES\AES.cpp" />
     <ClCompile Include="PH\cJSON\cJSON.c" />
     <ClCompile Include="PH\socket\socket.cpp" />
+    <ClCompile Include="overlay_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="driver_interface.hpp" />
@@ -71,5 +72,10 @@
     <ClInclude Include="PH\PH_API\PH_API.hpp" />
     <ClInclude Include="PH\picosha2\picosha2.h" />
     <ClInclude Include="PH\socket\socket.hpp" />
+    <ClInclude Include="VMProtect\Include\C\VMProtectDDK.h" />
+    <ClInclude Include="VMProtect\Include\C\VMProtectSDK.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="VMProtect\Include\ASM\VMProtectSDK.inc" />
   </ItemGroup>
 </Project>

@@ -20,6 +20,7 @@ namespace drv {
 		get_base,
 		clean,
 		spoof,
+		unload,
 		query
 	};
 
@@ -56,6 +57,7 @@ namespace drv {
 	/* security functions */
 	bool clean_traces ( );
 	bool spoof_hwid ( );
+	bool unload ( );
 
 	/* memory management functions */
 	bool read ( void* addr, void* buf, uint64_t sz );

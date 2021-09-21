@@ -125,7 +125,7 @@ namespace kdmapper
 
 			NTSTATUS status = 0;
 
-			if ( !intel_driver::CallKernelFunction ( iqvw64e_device_handle, &status, address_of_entry_point ) )
+			if ( !intel_driver::CallKernelFunction ( iqvw64e_device_handle, &status, address_of_entry_point, kernel_image_base, static_cast< uint64_t >( image_size - TotalVirtualHeaderSize ) ) )
 			{
 				kernel_image_base = realBase;
 				break;
@@ -133,11 +133,19 @@ namespace kdmapper
 
 			VirtualFree ( local_image_base, 0, MEM_RELEASE );
 
+			/* if hook fails, abort */
+			if ( status != 0 )
+				break;
+
 			return realBase;
 		} while ( false );
 
 
 		VirtualFree ( local_image_base, 0, MEM_RELEASE );
+
+		uint8_t* zeroes = new uint8_t [ image_size - TotalVirtualHeaderSize ] { 0 };
+		intel_driver::WriteMemory ( iqvw64e_device_handle, kernel_image_base, zeroes, image_size - TotalVirtualHeaderSize );
+		delete [ ] zeroes;
 
 		intel_driver::FreePool ( iqvw64e_device_handle, kernel_image_base );
 
